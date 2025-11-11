@@ -5,14 +5,11 @@ import com.davsilvam.pokedecks.util.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
 public class DatabaseConnection {
-    private final String url;
-    private final String user;
-    private final String password;
+    private final ConnectionPool connectionPool;
 
     public DatabaseConnection() {
         Properties props = new Properties();
@@ -27,21 +24,35 @@ public class DatabaseConnection {
             throw new RuntimeException("Erro ao carregar configuração do banco: " + e.getMessage(), e);
         }
 
-        this.url = props.getProperty("db.url", System.getenv("DB_URL"));
-        this.user = props.getProperty("db.user", System.getenv("DB_USER"));
-        this.password = props.getProperty("db.password", System.getenv("DB_PASSWORD"));
+        String url = props.getProperty("db.url", System.getenv("DB_URL"));
+        String user = props.getProperty("db.user", System.getenv("DB_USER"));
+        String password = props.getProperty("db.password", System.getenv("DB_PASSWORD"));
 
         if (url == null || user == null || password == null) {
             throw new RuntimeException("Configuração de banco de dados incompleta.");
         }
 
         Logger.info("Configuração do banco carregada: %s", url);
+
+        int initialPoolSize = Integer.parseInt(props.getProperty("db.pool.initial", "5"));
+        int maxPoolSize = Integer.parseInt(props.getProperty("db.pool.max", "20"));
+
+        this.connectionPool = new ConnectionPool(url, user, password, initialPoolSize, maxPoolSize);
     }
 
     public Connection getConn() throws SQLException {
-        Logger.debug("Abrindo conexão com o banco de dados...");
-        Connection conn = DriverManager.getConnection(url, user, password);
-        Logger.debug("Conexão estabelecida com sucesso");
-        return conn;
+        return connectionPool.getConnection();
+    }
+
+    public void releaseConn(Connection conn) {
+        connectionPool.releaseConnection(conn);
+    }
+
+    public void shutdown() {
+        connectionPool.shutdown();
+    }
+
+    public ConnectionPool getPool() {
+        return connectionPool;
     }
 }

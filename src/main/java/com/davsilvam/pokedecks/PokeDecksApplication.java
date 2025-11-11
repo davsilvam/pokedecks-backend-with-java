@@ -13,6 +13,7 @@ public class PokeDecksApplication {
 
         SimpleHttpServer server = new SimpleHttpServer(8080);
         server.register("/health", app.healthController);
+        server.register("/api/auth", app.authController);
         server.register("/api/users", app.userController);
         server.register("/api/orders", app.orderController);
         server.register("/api/sets", app.setController);

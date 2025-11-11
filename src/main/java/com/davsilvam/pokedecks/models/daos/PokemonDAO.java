@@ -17,7 +17,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
 
     @Override
     public Pokemon save(Pokemon pokemon) throws SQLException {
-        String queryStr = "INSERT INTO pokemons (id, dex_id, hp, types, stage, description, level) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String queryStr = "INSERT INTO pokemons (card_id, dex_id, hp, types, stage, description, level) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (
                 Connection conn = db.getConn();
@@ -43,7 +43,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
 
     @Override
     public Pokemon findById(String id) throws SQLException {
-        String queryStr = "SELECT * FROM pokemons WHERE id = ?";
+        String queryStr = "SELECT * FROM pokemons WHERE card_id = ?";
         Pokemon pokemon = null;
 
         try (
@@ -63,7 +63,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
     }
 
     public Pokemon findByCardId(String cardId) throws SQLException {
-        String queryStr = "SELECT p.* FROM pokemons p JOIN cards c ON p.id = c.pokemon_id WHERE c.id = ?";
+        String queryStr = "SELECT p.* FROM pokemons p JOIN cards c ON p.card_id = c.id WHERE c.id = ?";
         Pokemon pokemon = null;
 
         try (
@@ -103,7 +103,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
 
     @Override
     public boolean existsById(String id) throws SQLException {
-        String queryStr = "SELECT 1 FROM pokemons WHERE id = ?";
+        String queryStr = "SELECT 1 FROM pokemons WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -136,7 +136,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
 
     @Override
     public void deleteById(String id) throws SQLException {
-        String queryStr = "DELETE FROM pokemons WHERE id = ?";
+        String queryStr = "DELETE FROM pokemons WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -153,7 +153,7 @@ public class PokemonDAO implements DAO<Pokemon, String> {
     }
 
     private Pokemon buildPokemonFromResultSet(ResultSet result) throws SQLException {
-        String id = result.getString("id");
+        String id = result.getString("card_id");
         int dexId = result.getInt("dex_id");
         int hp = result.getInt("hp");
         String types = result.getString("types");

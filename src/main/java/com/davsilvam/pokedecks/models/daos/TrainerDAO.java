@@ -17,7 +17,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
 
     @Override
     public Trainer save(Trainer trainer) throws SQLException {
-        String query = "INSERT INTO trainers (id, effect, type) VALUES (?, ?, ?)";
+        String query = "INSERT INTO trainers (card_id, effect, type) VALUES (?, ?, ?)";
 
         try (
                 Connection conn = db.getConn();
@@ -39,7 +39,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
 
     @Override
     public Trainer findById(String id) throws SQLException {
-        String query = "SELECT * FROM trainers WHERE id = ?";
+        String query = "SELECT * FROM trainers WHERE card_id = ?";
         Trainer trainer = null;
 
         try (
@@ -59,7 +59,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
     }
 
     public Trainer findByCardId(String cardId) throws SQLException {
-        String query = "SELECT t.* FROM trainers t JOIN cards c ON t.id = c.trainer_id WHERE c.id = ?";
+        String query = "SELECT t.* FROM trainers t JOIN cards c ON t.card_id = c.id WHERE c.id = ?";
         Trainer trainer = null;
 
         try (
@@ -99,7 +99,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
 
     @Override
     public boolean existsById(String id) throws SQLException {
-        String query = "SELECT 1 FROM trainers WHERE id = ?";
+        String query = "SELECT 1 FROM trainers WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -132,7 +132,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
 
     @Override
     public void deleteById(String id) throws SQLException {
-        String query = "DELETE FROM trainers WHERE id = ?";
+        String query = "DELETE FROM trainers WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -149,7 +149,7 @@ public class TrainerDAO implements DAO<Trainer, String> {
     }
 
     private Trainer buildTrainerFromResultSet(ResultSet rs) throws SQLException {
-        String id = rs.getString("id");
+        String id = rs.getString("card_id");
         String effect = rs.getString("effect");
         String type = rs.getString("type");
 

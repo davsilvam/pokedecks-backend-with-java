@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/src/main/java/com/davsilvam/pokedecks/models/daos/EnergyDAO.java" value="efc14b4f-ee48-4240-af03-711055c10c64" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/davsilvam/pokedecks/models/daos/PokemonDAO.java" value="efc14b4f-ee48-4240-af03-711055c10c64" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/davsilvam/pokedecks/models/daos/TrainerDAO.java" value="efc14b4f-ee48-4240-af03-711055c10c64" />
+  </component>
+</project>

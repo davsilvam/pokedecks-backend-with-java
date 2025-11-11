@@ -18,6 +18,7 @@ public final class AppCompositionRoot {
     public final OrderDAO orderDAO;
 
     // Services
+    public final AuthenticationService authenticationService;
     public final UserService userService;
     public final CardService cardService;
     public final SetService setService;
@@ -25,6 +26,7 @@ public final class AppCompositionRoot {
     public final OrderService orderService;
 
     // Controllers
+    public final AuthController authController;
     public final UserController userController;
     public final CardController cardController;
     public final SetController setController;
@@ -35,7 +37,7 @@ public final class AppCompositionRoot {
 
     public AppCompositionRoot() {
         Logger.info("Inicializando Composition Root...");
-        
+
         DatabaseConnection db = new DatabaseConnection();
 
         Logger.debug("Instanciando DAOs...");
@@ -54,15 +56,17 @@ public final class AppCompositionRoot {
         this.setService = new SetService(serieDAO, setDAO);
         this.serieService = new SerieService(serieDAO);
         this.orderService = new OrderService(orderDAO, userDAO, cardDAO);
+        this.authenticationService = new AuthenticationService(userDAO);
 
         Logger.debug("Instanciando Controllers...");
+        this.authController = new AuthController(authenticationService);
         this.userController = new UserController(userService, orderService);
         this.cardController = new CardController(cardService);
         this.setController = new SetController(setService, cardService);
         this.serieController = new SerieController(serieService, setService);
         this.orderController = new OrderController(orderService);
         this.healthController = new HealthController();
-        
+
         Logger.info("Composition Root inicializado com sucesso");
     }
 

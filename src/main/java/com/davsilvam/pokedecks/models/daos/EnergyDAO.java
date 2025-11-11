@@ -18,7 +18,7 @@ public class EnergyDAO implements DAO<Energy, String> {
 
     @Override
     public Energy save(Energy energy) throws SQLException {
-        String queryStr = "INSERT INTO energies (id, effect, type) VALUES (?, ?, ?)";
+        String queryStr = "INSERT INTO energies (card_id, effect, type) VALUES (?, ?, ?)";
 
         try (
                 Connection conn = db.getConn();
@@ -36,7 +36,7 @@ public class EnergyDAO implements DAO<Energy, String> {
 
     @Override
     public Energy findById(String id) throws SQLException {
-        String queryStr = "SELECT * FROM energies WHERE id = ?";
+        String queryStr = "SELECT * FROM energies WHERE card_id = ?";
         Energy energy = null;
 
         try (
@@ -56,7 +56,7 @@ public class EnergyDAO implements DAO<Energy, String> {
     }
 
     public Energy findByCardId(String cardId) throws SQLException {
-        String queryStr = "SELECT e.* FROM energies e JOIN cards c ON e.id = c.energy_id WHERE c.id = ?";
+        String queryStr = "SELECT e.* FROM energies e JOIN cards c ON e.card_id = c.id WHERE c.id = ?";
         Energy energy = null;
 
         try (
@@ -96,7 +96,7 @@ public class EnergyDAO implements DAO<Energy, String> {
 
     @Override
     public boolean existsById(String id) throws SQLException {
-        String queryStr = "SELECT 1 FROM energies WHERE id = ?";
+        String queryStr = "SELECT 1 FROM energies WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -129,7 +129,7 @@ public class EnergyDAO implements DAO<Energy, String> {
 
     @Override
     public void deleteById(String id) throws SQLException {
-        String queryStr = "DELETE FROM energies WHERE id = ?";
+        String queryStr = "DELETE FROM energies WHERE card_id = ?";
 
         try (
                 Connection conn = db.getConn();
@@ -146,7 +146,7 @@ public class EnergyDAO implements DAO<Energy, String> {
     }
 
     private Energy buildEnergyFromResultSet(ResultSet result) throws SQLException {
-        String energyId = result.getString("id");
+        String energyId = result.getString("card_id");
         String effect = result.getString("effect");
         String type = result.getString("type");
 
