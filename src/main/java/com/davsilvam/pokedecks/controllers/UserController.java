@@ -27,7 +27,6 @@ public class UserController extends SimpleServlet {
     public void doGet(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // GET /api/users/me
         if (path.equals("/api/users/me")) {
             String email = req.authenticatedEmail();
             if (email == null) {
@@ -45,7 +44,6 @@ public class UserController extends SimpleServlet {
             return;
         }
 
-        // GET /api/users/{id}
         if (path.matches("^/api/users/[a-fA-F0-9\\-]+$")) {
             UUID id = UUID.fromString(path.substring(path.lastIndexOf("/") + 1));
             UserResponseDTO user = userService.findById(id);
@@ -59,14 +57,19 @@ public class UserController extends SimpleServlet {
             return;
         }
 
-        // GET /api/users
         if (path.equals("/api/users")) {
+            // ADMIN-only endpoint
+            String role = req.authenticatedRole();
+            if (!"ADMIN".equals(role)) {
+                res.error(403, "Forbidden - Admin role required");
+                return;
+            }
+
             List<UserResponseDTO> users = userService.findAll();
             res.json(users);
             return;
         }
 
-        // GET /api/users/{userId}/orders
         if (path.matches("^/api/users/[a-fA-F0-9\\-]+/orders$")) {
             String[] parts = path.split("/");
             UUID userId = UUID.fromString(parts[3]);
@@ -82,7 +85,6 @@ public class UserController extends SimpleServlet {
     public void doPut(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // PUT /api/users/{id}
         if (path.matches("^/api/users/[a-fA-F0-9\\-]+$")) {
             String email = req.authenticatedEmail();
 
@@ -117,7 +119,6 @@ public class UserController extends SimpleServlet {
     public void doDelete(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // DELETE /api/users/{id}
         if (path.matches("^/api/users/[a-fA-F0-9\\-]+$")) {
             String email = req.authenticatedEmail();
 

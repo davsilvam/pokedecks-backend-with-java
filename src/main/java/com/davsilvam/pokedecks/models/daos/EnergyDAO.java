@@ -127,6 +127,27 @@ public class EnergyDAO implements DAO<Energy, String> {
         }
     }
 
+    public Energy update(Energy energy) throws SQLException {
+        String queryStr = "UPDATE energies SET effect = ?, type = ? WHERE card_id = ?";
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(queryStr)
+        ) {
+            pstmt.setString(1, energy.getEffect());
+            pstmt.setString(2, energy.getType());
+            pstmt.setString(3, energy.getId());
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Failed to update energy, no rows affected.");
+            }
+
+            return energy;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String queryStr = "DELETE FROM energies WHERE card_id = ?";

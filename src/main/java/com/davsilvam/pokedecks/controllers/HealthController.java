@@ -21,7 +21,6 @@ public class HealthController extends SimpleServlet {
     public void doGet(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // GET /health
         switch (path) {
             case "/health" -> {
                 Map<String, Object> health = new HashMap<>();
@@ -36,8 +35,6 @@ public class HealthController extends SimpleServlet {
                 return;
             }
 
-
-            // GET /health/ready
             case "/health/ready" -> {
                 Map<String, Object> readiness = new HashMap<>();
                 readiness.put("status", "READY");
@@ -49,8 +46,6 @@ public class HealthController extends SimpleServlet {
                 return;
             }
 
-
-            // GET /health/live
             case "/health/live" -> {
                 Map<String, Object> liveness = new HashMap<>();
                 liveness.put("status", "ALIVE");

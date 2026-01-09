@@ -1,398 +1,427 @@
-# 🃏 PokéDecks API
+# 🎴 PokéDecks-SE
 
-API RESTful para gerenciamento de coleções de cartas Pokémon TCG, desenvolvida em **Java 21 puro** sem frameworks como Spring Boot.
+API RESTful desenvolvida em **Java 21 puro** (zero frameworks) para gerenciamento de coleções de cartas Pokémon TCG. Sistema completo de autenticação JWT, catálogo de produtos e controle de pedidos.
 
-## 🎯 Características
+## 📋 Sobre o Projeto
 
-- ✅ **Zero Frameworks** - Java puro, sem Spring Boot
-- ✅ **Mínimas Dependências** - Apenas 4 bibliotecas externas essenciais
+PokéDecks-SE é uma aplicação backend que simula uma loja online de cartas Pokémon TCG (Trading Card Game). O projeto oferece funcionalidades de autenticação JWT, catálogo de produtos organizados por séries e sets, além de um sistema completo de pedidos com controle de estoque.
+
+**Este projeto é uma reescrita minimalista da [versão original com Spring Boot](https://github.com/davsilvam/pokedecks-backend-with-spring)**, demonstrando que é possível construir uma API RESTful completa e robusta usando apenas Java puro e o mínimo de dependências externas. As APIs são **100% idênticas** em comportamento e endpoints, permitindo comparação justa de desempenho.
+
+### Características Técnicas
+
+- ✅ **Zero Frameworks** - Java 21 puro, sem Spring Boot ou qualquer framework
+- ✅ **Mínimas Dependências** - Apenas 3 bibliotecas externas essenciais
+- ✅ **RESTful API** - Seguindo boas práticas e padrões REST
 - ✅ **Autenticação JWT** - Validação HMAC-SHA256 segura com JJWT
-- ✅ **Arquitetura em Camadas** - Separação clara: Server → Controllers → Services → DAOs
-- ✅ **Type Safe** - Records do Java 21 para DTOs
-- ✅ **Startup Rápido** - Sem overhead de framework, inicia em milissegundos
-- ✅ **Security** - BCrypt para hashing de senhas
+- ✅ **Servidor HTTP Nativo** - `com.sun.net.httpserver` do JDK
+- ✅ **JDBC Puro** - Acesso direto ao banco sem ORM
+- ✅ **Arquitetura em Camadas** - Separação clara de responsabilidades
+- ✅ **Type Safe** - Records do Java 21 para DTOs imutáveis
+- ✅ **Startup Ultra-Rápido** - Inicia em milissegundos (sem overhead de framework)
 
-## 🛠️ Stack Tecnológica
+### Principais Funcionalidades
 
-- **Java 21** - Recursos modernos (Records, Pattern Matching)
-- **PostgreSQL** - Banco de dados relacional via JDBC puro
-- **JJWT** - Geração e validação de tokens JWT
-- **Gson** - Serialização/deserialização JSON
-- **BCrypt** - Hashing seguro de senhas
-- **Native HttpServer** - `com.sun.net.httpserver` do JDK
+- 🔐 **Autenticação e Autorização**: Sistema de JWT com controle de acesso baseado em roles (USER/ADMIN)
+- 👤 **Gerenciamento de Usuários**: Cadastro, edição de perfil e administração de contas
+- 🎯 **Catálogo de Cartas**: Navegação e busca por cartas Pokémon, Energias e Treinadores com controle de estoque
+- 📚 **Séries e Sets**: Organização hierárquica das cartas por séries e coleções
+- 🛒 **Sistema de Pedidos**: Criação e gerenciamento completo de pedidos de compra
+- 🔒 **Segurança**: BCrypt para hashing de senhas e PreparedStatements para prevenir SQL injection
 
-## 🚀 Quick Start
+## 🛠️ Tecnologias Utilizadas
 
-### 1. Pré-requisitos
+### Backend
+- **Java 21** - Linguagem com recursos modernos (Records, Pattern Matching, Text Blocks, Virtual Threads)
+- **Native HttpServer** - `com.sun.net.httpserver.HttpServer` (API nativa do JDK)
+- **JDBC Puro** - `java.sql.*` para acesso direto ao banco de dados
 
-- Java 21+
-- PostgreSQL 14+
-- Maven 3.8+
+### Banco de Dados
+- **PostgreSQL 16** - Banco de dados relacional
 
-### 2. Configuração
+### Ferramentas e Bibliotecas
+- **JJWT 0.12.5** - Geração e validação segura de tokens JWT
+- **Gson 2.10.1** - Serialização/deserialização JSON
+- **PostgreSQL JDBC Driver 42.7.8** - Conectividade com PostgreSQL
+- **Maven** - Gerenciamento de dependências e build
+- **Docker & Docker Compose** - Containerização
 
-```bash
-# Configurar variáveis de ambiente
-export JWT_SECRET="sua-chave-secreta-minimo-32-caracteres"
-export DB_URL="jdbc:postgresql://localhost:5432/pokedecks"
-export DB_USER="postgres"
-export DB_PASSWORD="postgres"
-```
+**Total: 3 dependências externas** (mínimo absoluto para funcionalidade completa)
 
-### 3. Executar
+## 🏗️ Arquitetura
 
-```bash
-# Compilar
-mvn clean compile
-
-# Executar
-mvn exec:java -Dexec.mainClass="com.davsilvam.pokedecks.PokeDecksApplication"
-
-# Servidor disponível em http://localhost:8080
-```
-
-## 📡 Endpoints da API
-
-### 🌍 Públicos (sem autenticação)
-
-#### Cards
-```bash
-# Listar todas as cartas
-GET /api/cards
-
-# Buscar carta por ID
-GET /api/cards/{id}
-
-# Buscar cartas por nome
-GET /api/cards/search?name=pikachu
-```
-
-#### Sets
-```bash
-# Listar todos os sets
-GET /api/sets
-
-# Buscar set por ID
-GET /api/sets/{id}
-
-# Listar cartas de um set
-GET /api/sets/{id}/cards
-```
-
-#### Series
-```bash
-# Listar todas as séries
-GET /api/series
-
-# Buscar série por ID
-GET /api/series/{id}
-
-# Listar sets de uma série
-GET /api/series/{id}/sets
-```
-
-#### Users (parcialmente público)
-```bash
-# Listar usuários
-GET /api/users
-
-# Buscar usuário por ID
-GET /api/users/{id}
-
-# Listar pedidos de um usuário
-GET /api/users/{id}/orders
-```
-
-### 🔒 Protegidos (requer JWT válido)
-
-```bash
-# Obter perfil do usuário autenticado
-GET /api/users/me
-Headers: Authorization: Bearer <token>
-
-# Editar perfil próprio
-PUT /api/users/{id}
-Headers: Authorization: Bearer <token>
-Body: { "name": "Novo Nome", "username": "novo_username" }
-
-# Deletar conta própria
-DELETE /api/users/{id}
-Headers: Authorization: Bearer <token>
-
-# Criar pedido
-POST /api/orders
-Headers: Authorization: Bearer <token>
-Body: { "items": [{"cardId": "uuid", "quantity": 2}] }
-
-# Buscar pedido
-GET /api/orders/{id}
-Headers: Authorization: Bearer <token>
-```
-
-### 👑 Restritos (requer role ADMIN)
-
-```bash
-# Deletar carta
-DELETE /api/cards/{id}
-Headers: Authorization: Bearer <admin-token>
-
-# Deletar set
-DELETE /api/sets/{id}
-Headers: Authorization: Bearer <admin-token>
-
-# Deletar série
-DELETE /api/series/{id}
-Headers: Authorization: Bearer <admin-token>
-
-# Listar todos os pedidos
-GET /api/orders
-Headers: Authorization: Bearer <admin-token>
-
-# Deletar pedido
-DELETE /api/orders/{id}
-Headers: Authorization: Bearer <admin-token>
-```
-
-### 📋 Tabela Resumida
-
-| Rota | Método | Auth | Role | Descrição |
-|------|--------|------|------|-----------|
-| `/api/cards` | GET | ❌ | - | Lista cartas |
-| `/api/cards/search?name=x` | GET | ❌ | - | Busca por nome |
-| `/api/cards/{id}` | GET | ❌ | - | Busca carta |
-| `/api/cards/{id}` | DELETE | ✅ | ADMIN | Deleta carta |
-| `/api/sets` | GET | ❌ | - | Lista sets |
-| `/api/sets/{id}` | GET | ❌ | - | Busca set |
-| `/api/sets/{id}/cards` | GET | ❌ | - | Cartas do set |
-| `/api/sets/{id}` | DELETE | ✅ | ADMIN | Deleta set |
-| `/api/series` | GET | ❌ | - | Lista séries |
-| `/api/series/{id}` | GET | ❌ | - | Busca série |
-| `/api/series/{id}/sets` | GET | ❌ | - | Sets da série |
-| `/api/series/{id}` | DELETE | ✅ | ADMIN | Deleta série |
-| `/api/users` | GET | ❌ | - | Lista usuários |
-| `/api/users/me` | GET | ✅ | USER | Perfil próprio |
-| `/api/users/{id}` | GET | ❌ | - | Busca usuário |
-| `/api/users/{id}` | PUT | ✅ | Owner | Edita perfil |
-| `/api/users/{id}` | DELETE | ✅ | Owner | Deleta conta |
-| `/api/users/{id}/orders` | GET | ❌ | - | Pedidos do usuário |
-| `/api/orders` | GET | ✅ | ADMIN | Lista pedidos |
-| `/api/orders` | POST | ✅ | USER | Cria pedido |
-| `/api/orders/{id}` | GET | ✅ | USER | Busca pedido |
-| `/api/orders/{id}` | DELETE | ✅ | ADMIN | Deleta pedido |
-
-## 🔧 Componentes Principais
-
-### 1. Server Layer
-- **SimpleHttpServer**: Servidor HTTP sobre `com.sun.net.httpserver.HttpServer`
-- **AuthFilter**: Middleware que valida JWT em todas as requisições
-- **ServletAdapter**: Adapta `HttpExchange` para `Request/Response`
-- **Request**: Wrapper que facilita acesso a body, headers, query params, auth data
-- **Response**: Wrapper para envio de JSON e tratamento de erros
-
-### 2. Security
-- **JwtUtil**: Geração e validação de tokens JWT com HMAC-SHA256
-  - Valida assinatura e expiração automaticamente
-  - Extrai email e role do payload
-- **AuthFilter**: Intercepta requisições e valida tokens
-  - Seta `authenticatedEmail` e `authenticatedRole` no contexto
-  - Retorna 401 para tokens inválidos
-  - Permite rotas públicas (sem token)
-
-### 3. Controllers
-Implementam `SimpleServlet` e gerenciam roteamento:
-- Parsing de parâmetros da URL
-- Validação de autenticação/autorização
-- Delegação para services
-- Formatação de respostas JSON
-
-### 4. Services
-- Lógica de negócio
-- Orquestração entre DAOs
-- Conversão Entity → DTO (usando Mappers)
-- Wrapping de `SQLException` em `DatabaseException`
-
-### 5. DAOs (Data Access Objects)
-- Acesso direto ao PostgreSQL via JDBC
-- PreparedStatements para prevenir SQL injection
-- Conversão manual de `ResultSet` para entidades
-- Try-with-resources para gerenciamento de conexões
-
-### 6. DTOs e Mappers
-- **DTOs**: Records do Java 21 para transferência de dados
-- **Mappers**: Classes utilitárias para conversão Entity ↔ DTO
-- Separação clara entre camadas (entities no DAO, DTOs nos controllers)
-
-## 🏗️ Arquitetura em Camadas
-
-### Visão Geral
-```
-┌─────────────────────────────────────────┐
-│         HTTP Server Layer               │
-│   (SimpleHttpServer, AuthFilter,        │
-│    ServletAdapter, Request, Response)   │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│        Controllers Layer                │
-│  (UserController, CardController, etc)  │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│         Services Layer                  │
-│   (UserService, CardService, etc)       │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│          DAO Layer                      │
-│     (UserDAO, CardDAO, etc)             │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│         Database Layer                  │
-│      (PostgreSQL via JDBC)              │
-└─────────────────────────────────────────┘
-```
-
-### Fluxo de Requisição
-```
-Cliente HTTP
-   ↓
-SimpleHttpServer (porta 8080)
-   ↓
-AuthFilter (valida JWT e seta email/role)
-   ↓
-ServletAdapter (adapta HttpExchange → Request/Response)
-   ↓
-Controller (routing, validação auth/authz)
-   ↓
-Service (lógica de negócio)
-   ↓
-DAO (acesso ao banco)
-   ↓
-PostgreSQL
-```
-
-## 📚 Documentação
-
-- **[AGENTS.md](AGENTS.md)** - Documentação técnica completa da arquitetura
-  - Detalhamento de cada camada (Server, Controllers, Services, DAOs)
-  - Componentes principais (AuthFilter, ServletAdapter, Request/Response)
-  - Padrões de código e convenções
-  - Fluxo detalhado de requisições
-  - Exemplos de implementação
-- **[pom.xml](pom.xml)** - Configuração do Maven e dependências
-
-## 👨‍💻 Desenvolvimento
-
-### Estrutura de Pacotes
+O projeto segue uma arquitetura em camadas:
 
 ```
-com.davsilvam.pokedecks
-├── server/              # HTTP Server customizado
-│   ├── SimpleHttpServer.java
-│   ├── ServletAdapter.java
-│   ├── SimpleServlet.java
-│   ├── Request.java
-│   └── Response.java
-├── controllers/         # Endpoints REST
-│   ├── UserController.java
-│   ├── CardController.java
-│   ├── SetController.java
-│   ├── SerieController.java
-│   └── OrderController.java
-├── services/            # Lógica de negócio
-│   ├── UserService.java
-│   ├── CardService.java
-│   ├── dtos/           # Data Transfer Objects (Records)
-│   └── mappers/        # Entity ↔ DTO conversions
-├── models/
-│   ├── daos/           # Data Access Objects (JDBC)
+src/main/java/com/davsilvam/pokedecks/
+├── config/              # Configurações da aplicação
+│   ├── auth/           # Autenticação JWT e AuthFilter
+│   ├── database/       # Conexão com PostgreSQL (JDBC)
+│   ├── errors/         # Tratamento global de erros
+│   └── AppCompositionRoot.java  # Dependency Injection manual
+├── controllers/        # Endpoints da API REST
+│   ├── AuthController
+│   ├── UserController
+│   ├── CardController
+│   ├── SerieController
+│   ├── SetController
+│   └── OrderController
+├── models/             # Entidades do domínio
+│   ├── entities/              # Entidades JPA-like
+│   │   ├── Card.java          # Carta base (abstrata)
+│   │   ├── Pokemon.java       # Especialização: Pokémon
+│   │   ├── Energy.java        # Especialização: Energia
+│   │   ├── Trainer.java       # Especialização: Treinador
+│   │   ├── Serie.java
+│   │   ├── Set.java
+│   │   ├── Order.java
+│   │   ├── OrderItem.java
+│   │   └── User.java
+│   ├── daos/                  # Data Access Objects (JDBC puro)
 │   │   ├── UserDAO.java
 │   │   ├── CardDAO.java
 │   │   └── ...
-│   └── entities/       # Domain Entities
-│       ├── User.java
-│       ├── Card.java (abstrata)
-│       ├── Pokemon.java
-│       ├── Energy.java
-│       ├── Trainer.java
-│       ├── Set.java
-│       ├── Serie.java
-│       └── Order.java
-├── config/
-│   ├── auth/           # JWT e AuthFilter
-│   │   ├── JwtUtil.java
-│   │   └── AuthFilter.java
-│   ├── database/       # Conexão JDBC
-│   │   └── DatabaseConnection.java
-│   ├── errors/         # Exception handlers
-│   │   └── exceptions/
-│   └── AppCompositionRoot.java  # DI manual
-└── util/               # Utilitários
-    ├── JsonUtil.java
-    └── PropertiesConfig.java
+│   └── enums/                 # Enumerações (CardCategory, UserRole)
+├── server/            # HTTP Server customizado
+│   ├── SimpleHttpServer.java  # Servidor HTTP nativo
+│   ├── ServletAdapter.java    # Adaptador HttpExchange → Request/Response
+│   ├── SimpleServlet.java     # Interface base para Controllers
+│   ├── Request.java           # Wrapper de requisição HTTP
+│   └── Response.java          # Wrapper de resposta HTTP
+├── services/          # Lógica de negócio
+│   ├── AuthService
+│   ├── UserService
+│   ├── CardService
+│   ├── SerieService
+│   ├── SetService
+│   ├── OrderService
+│   ├── dtos/                 # Data Transfer Objects (Records)
+│   └── mappers/              # Conversores entity → DTO
+├── util/              # Utilitários
+│   ├── JsonUtil.java
+│   └── PropertiesConfig.java
+└── PokeDecksApplication.java
 ```
 
-### Próximos Passos
+### Principais Entidades
 
-1. 📋 **Implementar endpoints de autenticação** (AuthController com login/register)
-2. ✅ **Adicionar validação de DTOs** (validações de campos obrigatórios e formatos)
-3. 🧪 **Criar testes automatizados** (unit tests para services e DAOs)
-4. 🌐 **Configurar CORS** (permitir requisições de frontend)
-5. 📊 **Logging estruturado** (logs de requisições e erros)
-6. 🔄 **Connection pooling** (otimizar performance do banco)
-7. 📖 **Documentação Swagger/OpenAPI** (documentar API automaticamente)
+- **User**: Usuários do sistema com roles (USER/ADMIN)
+- **Card**: Cartas base com informações comuns (id, nome, imagem, raridade, preço, estoque)
+- **Pokemon**: Especialização de cartas Pokémon (HP, tipos, estágio, level, descrição, número da Pokédex)
+- **Energy**: Cartas de energia
+- **Trainer**: Cartas de treinador
+- **Serie**: Séries de cartas (coleções principais)
+- **Set**: Conjuntos/expansões dentro de séries
+- **Order**: Pedidos de compra dos usuários
+- **OrderItem**: Itens individuais de um pedido
 
-## 📄 Licença
+### Relacionamentos
 
-Este projeto é de código aberto para fins educacionais.
+- **Card ↔ Set**: Muitos-para-um
+- **Set ↔ Serie**: Muitos-para-um
+- **Pokemon/Energy/Trainer ↔ Card**: Um-para-um (herança de tabela)
+- **Order ↔ User**: Muitos-para-um
+- **OrderItem ↔ Order**: Muitos-para-um
+- **OrderItem ↔ Card**: Muitos-para-um
 
-## ✨ Autor
+## 🚀 Como Executar
 
-**David Menezes** ([@davsilvam](https://github.com/davsilvam))
+### Pré-requisitos
+
+- Java 21 ou superior
+- Maven 3.9+
+- Docker e Docker Compose (recomendado)
+
+### Opção 1: Executar com Docker Compose (Recomendado)
+
+```bash
+# Clone o repositório
+git clone https://github.com/davsilvam/pokedecks-se.git
+cd pokedecks-se
+
+# Inicie os containers (PostgreSQL + Aplicação)
+docker-compose up -d
+
+# A aplicação estará disponível em http://localhost:8081
+```
+
+O Docker Compose irá:
+- Iniciar o PostgreSQL 16 com healthcheck
+- Construir a aplicação
+- Executar a aplicação na porta 8081
+- Compartilhar o mesmo banco com versão Spring Boot (se necessário)
+
+### Opção 2: Executar Localmente
+
+```bash
+# 1. Inicie o PostgreSQL (via Docker)
+docker-compose up postgres -d
+
+# 2. Configure as variáveis de ambiente
+export JWT_SECRET="sua-chave-secreta-minimo-32-caracteres"
+export DB_URL="jdbc:postgresql://localhost:5432/pokedecks"
+export DB_USER="docker"
+export DB_PASSWORD="docker"
+
+# No Windows use:
+# set JWT_SECRET=sua-chave-secreta-minimo-32-caracteres
+# set DB_URL=jdbc:postgresql://localhost:5432/pokedecks
+# set DB_USER=docker
+# set DB_PASSWORD=docker
+
+# 3. Execute a aplicação com Maven
+mvn exec:java -Dexec.mainClass="com.davsilvam.pokedecks.PokeDecksApplication"
+
+# Ou compile e execute o JAR
+mvn clean package
+java -jar target/pokedecks-se-1.0-SNAPSHOT.jar
+```
+
+## 🗄️ Configuração
+
+### Desenvolvimento (application.properties ou variáveis de ambiente)
+
+```properties
+# application.properties
+db.url=jdbc:postgresql://localhost:5432/pokedecks
+db.user=docker
+db.password=docker
+jwt.secret=sua-chave-secreta-minimo-32-caracteres
+
+# Variáveis de ambiente (recomendado)
+DB_URL=jdbc:postgresql://localhost:5432/pokedecks
+DB_USER=docker
+DB_PASSWORD=docker
+JWT_SECRET=sua-chave-secreta-minimo-32-caracteres
+```
+
+### Produção
+
+Use variáveis de ambiente para maior segurança:
+
+```bash
+# Obrigatórias
+JWT_SECRET=sua-chave-secreta-minimo-32-caracteres
+DB_URL=jdbc:postgresql://host:port/database
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+
+# Opcionais
+PORT=8081
+JAVA_OPTS=-Xmx512m -Xms256m
+```
+
+### Schema do Banco de Dados
+
+PokéDecks-SE utiliza o mesmo schema da versão Spring Boot. Para popular o banco de dados, execute as migrations da versão Spring Boot ou use o script SQL de seed incluído.
+
+## 📚 Documentação da API
+
+PokéDecks-SE implementa **100% dos endpoints** da versão Spring Boot. As APIs são idênticas.
+
+### Principais Endpoints
+
+#### Autenticação (`/api/auth`)
+- `POST /api/auth/register` - Registrar novo usuário
+- `POST /api/auth/authenticate` - Autenticar e obter JWT token
+
+#### Usuários (`/api/users`)
+- `GET /api/users` - Listar usuários (requer ADMIN)
+- `GET /api/users/{id}` - Buscar usuário por ID (requer autenticação)
+- `PUT /api/users/{id}` - Atualizar perfil (requer autenticação)
+- `DELETE /api/users/{id}` - Deletar usuário (requer ADMIN)
+
+#### Cartas (`/api/cards`)
+- `GET /api/cards` - Listar cartas (requer autenticação)
+- `GET /api/cards/{id}` - Buscar carta por ID (requer autenticação)
+- `GET /api/cards/search?name={nome}` - Buscar por nome (requer autenticação)
+- `POST /api/cards` - Criar carta (requer ADMIN)
+- `PUT /api/cards/{id}` - Atualizar carta (requer ADMIN)
+- `DELETE /api/cards/{id}` - Deletar carta (requer ADMIN)
+
+#### Séries (`/api/series`)
+- `GET /api/series` - Listar séries (requer autenticação)
+- `GET /api/series/{id}` - Buscar série por ID (requer autenticação)
+- `GET /api/series/{id}/sets` - Listar sets de uma série (requer autenticação)
+- `POST /api/series` - Criar série (requer ADMIN)
+- `PUT /api/series/{id}` - Atualizar série (requer ADMIN)
+- `DELETE /api/series/{id}` - Deletar série (requer ADMIN)
+
+#### Sets (`/api/sets`)
+- `GET /api/sets` - Listar sets (requer autenticação)
+- `GET /api/sets/{id}` - Buscar set por ID (requer autenticação)
+- `GET /api/sets/{id}/cards` - Buscar set com cartas (requer autenticação)
+- `POST /api/sets` - Criar set (requer ADMIN)
+- `PUT /api/sets/{id}` - Atualizar set (requer ADMIN)
+- `DELETE /api/sets/{id}` - Deletar set (requer ADMIN)
+
+#### Pedidos (`/api/orders`)
+- `GET /api/orders` - Listar pedidos (requer ADMIN)
+- `GET /api/orders/{id}` - Buscar pedido por ID (requer autenticação)
+- `POST /api/orders` - Criar pedido (requer autenticação)
+- `DELETE /api/orders/{id}` - Deletar pedido (requer ADMIN)
+
+## 🔐 Autenticação
+
+A API utiliza JWT (JSON Web Tokens) com HMAC-SHA256 para autenticação.
+
+### Fluxo de Autenticação
+
+1. **Registro**: Usuário se registra (`POST /api/auth/register`)
+2. **Login**: Usuário faz autenticação (`POST /api/auth/authenticate`)
+3. **Token**: Servidor retorna JWT assinado com chave secreta HMAC
+4. **Autorização**: Cliente inclui token no header `Authorization: Bearer {token}`
+5. **Validação**: Servidor valida token em cada requisição protegida (via AuthFilter)
+
+### Controle de Acesso
+
+O sistema possui dois níveis de acesso:
+- **USER**: Usuário comum (pode criar pedidos, visualizar cartas, editar próprio perfil)
+- **ADMIN**: Administrador (pode gerenciar cartas, séries, sets e acessar todos os pedidos)
+
+### Chave JWT
+
+A chave secreta JWT deve ser configurada via variável de ambiente:
+
+```bash
+# Mínimo 32 caracteres para segurança adequada
+export JWT_SECRET="sua-chave-secreta-minimo-32-caracteres"
+
+# Windows
+set JWT_SECRET=sua-chave-secreta-minimo-32-caracteres
+```
+
+**⚠️ Importante**: 
+- Nunca commitar chaves secretas no código-fonte
+- Em produção, use um sistema de secrets management
+- Rotacione chaves periodicamente
+
+## 🧪 Testes
+
+```bash
+# Build do projeto
+mvn clean package -DskipTests
+
+# Build completo (quando testes forem implementados)
+mvn clean package
+
+# O JAR será gerado em: target/pokedecks-se-1.0-SNAPSHOT.jar
+```
+
+## 🐛 Troubleshooting
+
+### Erro de conexão com o banco de dados
+
+```bash
+# Verifique se o PostgreSQL está rodando
+docker ps
+
+# Verifique os logs
+docker logs pokedecks-postgres-1
+
+# Reinicie o container
+docker-compose restart postgres
+```
+
+### Porta 8081 já em uso
+
+```bash
+# Windows
+netstat -ano | findstr :8081
+
+# Linux/Mac
+lsof -i :8081
+
+# Ou mude a porta via variável de ambiente
+export PORT=8082
+```
+
+### Erro JWT_SECRET não configurado
+
+```bash
+# Configure a variável de ambiente obrigatória
+export JWT_SECRET="sua-chave-secreta-minimo-32-caracteres"
+
+# Windows:
+set JWT_SECRET=sua-chave-secreta-minimo-32-caracteres
+```
+
+## 📝 Licença
+
+Este projeto é de código aberto e está disponível para fins educacionais.
+
+## 👨‍💻 Autor
+
+Desenvolvido por [davsilvam](https://github.com/davsilvam)
 
 ---
 
-**Versão:** 1.0.0  
-**Última atualização:** 18/11/2025
+⭐ Se este projeto foi útil para você, considere dar uma estrela no GitHub!
 
 ---
 
 ## 💡 Por que sem frameworks?
 
-### Vantagens
-- ✅ **Startup ultra-rápido** - Inicia em milissegundos vs segundos do Spring
-- ✅ **Footprint reduzido** - Menor uso de memória e disco
-- ✅ **Controle total** - Entendimento completo de cada linha de código
-- ✅ **Zero dependências transitivas** - Apenas 4 bibliotecas essenciais
-- ✅ **Código explícito** - Sem "mágica" ou reflection excessiva
-- ✅ **Aprendizado profundo** - Compreensão de HTTP, JDBC, JWT internamente
+Este projeto demonstra que é possível construir uma API RESTful completa e robusta usando apenas Java puro, sem depender de frameworks pesados.
+
+### Vantagens da Abordagem
+
+- ✅ **Startup Ultra-Rápido** - Inicia em milissegundos vs segundos do Spring Boot
+- ✅ **Footprint Reduzido** - Menor uso de memória RAM e espaço em disco
+- ✅ **Controle Total** - Entendimento completo de cada componente
+- ✅ **Mínimas Dependências** - Apenas 3 bibliotecas externas
+- ✅ **Código Explícito** - Sem "mágica" ou reflection excessiva
+- ✅ **Aprendizado Profundo** - Compreensão real de HTTP, JDBC, JWT
+- ✅ **Debugging Simples** - Stack traces limpos
+- ✅ **Deploy Leve** - JARs menores, imagens Docker compactas
 
 ### Trade-offs
-- ❌ **Mais boilerplate** - Código manual para features comuns
-- ❌ **Menos produtividade inicial** - Implementação manual de DI, routing, etc
-- ❌ **Ferramentas limitadas** - Sem Spring DevTools, anotações mágicas
-- ❌ **Manutenção manual** - DI e configurações feitas à mão
+
+- ❌ **Mais Boilerplate** - Código manual para features que frameworks abstraem
+- ❌ **Menos Produtividade Inicial** - Implementação manual de DI, routing, validação
+- ❌ **Ferramentas Limitadas** - Sem Spring DevTools, hot reload, etc.
+
+### Casos de Uso Ideais
+
+- 📚 **Fins Educacionais** - Aprender como frameworks funcionam "por baixo dos panos"
+- 🚀 **Microserviços Leves** - Quando startup time e footprint são críticos
+- 🔧 **Controle Máximo** - Aplicações com requisitos muito específicos
+- 🎯 **APIs Simples** - Quando Spring Boot seria overkill
+
+### Comparação de Desempenho
+
+Para comparar o desempenho entre Spring Boot e PokéDecks-SE, veja o projeto complementar [pokedecks-loadtest](../pokedecks-loadtest) que utiliza JMeter para testes de carga comparativos.
 
 ---
 
 ## 🛡️ Segurança
 
+### Implementações de Segurança
+
 1. **Autenticação JWT**
-   - Tokens assinados com HMAC-SHA256
+   - Tokens assinados com HMAC-SHA256 via biblioteca JJWT
    - Validação de assinatura e expiração automática
-   - Claims: `email`, `role`
-   - Sem session/cookies (stateless)
+   - Claims customizados: `email`, `role`
+   - Stateless (sem session/cookies)
 
 2. **Autorização**
-   - Controllers verificam role quando necessário
+   - Controle de acesso baseado em roles (RBAC)
+   - Middleware AuthFilter valida JWT em todas as requisições protegidas
+   - Controllers verificam roles quando necessário
    - Usuários só podem editar/deletar próprios dados
-   - Rotas ADMIN bloqueadas para não-admins
 
-3. **SQL Injection**
-   - Uso exclusivo de PreparedStatements
+3. **Prevenção de SQL Injection**
+   - Uso **exclusivo** de PreparedStatements em todos os DAOs
    - Zero concatenação de SQL dinâmico
+   - Parâmetros sempre sanitizados pelo JDBC Driver
 
 4. **Password Hashing**
-   - BCrypt para hash de senhas
-   - Salt automático por senha
+   - BCrypt para hash de senhas com salt automático
+   - Senhas nunca armazenadas em texto plano
+
+### Boas Práticas
+
+- ✅ Secrets via variáveis de ambiente (nunca hardcoded)
+- ✅ Validação de inputs nos Services
+- ✅ Exception handling sem vazar informações sensíveis
+- ✅ HTTPS/TLS recomendado em produção (configurar no load balancer/proxy)

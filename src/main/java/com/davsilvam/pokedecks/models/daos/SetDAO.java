@@ -197,6 +197,37 @@ public class SetDAO implements DAO<Set, String> {
         }
     }
 
+    public Set update(Set set) throws SQLException {
+        String query = "UPDATE sets SET name = ?, logo_url = ?, release_date = ?, serie_id = ? WHERE id = ?";
+        Logger.sql(query, set.getName(), set.getLogoUrl(), set.getReleaseDate(), set.getSerieId(), set.getId());
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(query)
+        ) {
+            pstmt.setString(1, set.getName());
+            pstmt.setString(2, set.getLogoUrl());
+
+            if (set.getReleaseDate() != null) {
+                pstmt.setTimestamp(3, Timestamp.valueOf(set.getReleaseDate()));
+            } else {
+                pstmt.setNull(3, Types.TIMESTAMP);
+            }
+
+            pstmt.setString(4, set.getSerieId());
+            pstmt.setString(5, set.getId());
+
+            int affected = pstmt.executeUpdate();
+
+            if (affected == 0) {
+                throw new SQLException("Failed to update set, no rows affected.");
+            }
+
+            Logger.debug("Set atualizado: %s", set.getId());
+            return set;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String query = "DELETE FROM sets WHERE id = ?";

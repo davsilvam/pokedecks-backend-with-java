@@ -134,6 +134,31 @@ public class PokemonDAO implements DAO<Pokemon, String> {
         }
     }
 
+    public Pokemon update(Pokemon pokemon) throws SQLException {
+        String queryStr = "UPDATE pokemons SET dex_id = ?, hp = ?, types = ?, stage = ?, description = ?, level = ? WHERE card_id = ?";
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(queryStr)
+        ) {
+            pstmt.setInt(1, pokemon.getDexId());
+            pstmt.setInt(2, pokemon.getHp());
+            pstmt.setString(3, pokemon.getTypes());
+            pstmt.setString(4, pokemon.getStage());
+            pstmt.setString(5, pokemon.getDescription());
+            pstmt.setInt(6, pokemon.getLevel());
+            pstmt.setString(7, pokemon.getId());
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Failed to update pokemon, no rows affected.");
+            }
+
+            return pokemon;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String queryStr = "DELETE FROM pokemons WHERE card_id = ?";

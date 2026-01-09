@@ -5,8 +5,11 @@ import com.davsilvam.pokedecks.server.Response;
 import com.davsilvam.pokedecks.server.SimpleServlet;
 import com.davsilvam.pokedecks.services.SerieService;
 import com.davsilvam.pokedecks.services.SetService;
+import com.davsilvam.pokedecks.services.dtos.CreateSerieRequestDTO;
 import com.davsilvam.pokedecks.services.dtos.SerieResponseDTO;
 import com.davsilvam.pokedecks.services.dtos.SetResponseDTO;
+import com.davsilvam.pokedecks.services.dtos.UpdateSerieRequestDTO;
+import com.davsilvam.pokedecks.util.JsonUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,14 +27,19 @@ public class SerieController extends SimpleServlet {
     public void doGet(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // GET /api/series
+        // Require authentication for all GET endpoints
+        String email = req.authenticatedEmail();
+        if (email == null) {
+            res.error(401, "Unauthorized - Authentication required");
+            return;
+        }
+
         if (path.equals("/api/series")) {
             List<SerieResponseDTO> series = serieService.getAllSeries();
             res.json(series);
             return;
         }
 
-        // GET /api/series/{id}
         if (path.matches("^/api/series/[\\w\\-]+$")) {
             String id = path.substring(path.lastIndexOf("/") + 1);
             SerieResponseDTO serie = serieService.getSerieById(id);
@@ -45,7 +53,6 @@ public class SerieController extends SimpleServlet {
             return;
         }
 
-        // GET /api/series/{id}/sets
         if (path.matches("^/api/series/[\\w\\-]+/sets$")) {
             String[] parts = path.split("/");
             String id = parts[3];
@@ -64,10 +71,54 @@ public class SerieController extends SimpleServlet {
     }
 
     @Override
+    public void doPost(Request req, Response res) throws IOException {
+        String path = req.path();
+
+        // POST /api/series
+        if (path.equals("/api/series")) {
+            String role = req.authenticatedRole();
+            if (!"ADMIN".equals(role)) {
+                res.error(403, "Forbidden - Admin role required");
+                return;
+            }
+
+            String body = req.body();
+            CreateSerieRequestDTO request = JsonUtil.fromJson(body, CreateSerieRequestDTO.class);
+            SerieResponseDTO created = serieService.createSerie(request);
+            res.json(201, created);
+            return;
+        }
+
+        res.error(404, "Endpoint not found");
+    }
+
+    @Override
+    public void doPut(Request req, Response res) throws IOException {
+        String path = req.path();
+
+        // PUT /api/series/{id}
+        if (path.matches("^/api/series/[\\w\\-]+$")) {
+            String role = req.authenticatedRole();
+            if (!"ADMIN".equals(role)) {
+                res.error(403, "Forbidden - Admin role required");
+                return;
+            }
+
+            String id = path.substring(path.lastIndexOf("/") + 1);
+            String body = req.body();
+            UpdateSerieRequestDTO request = JsonUtil.fromJson(body, UpdateSerieRequestDTO.class);
+            SerieResponseDTO updated = serieService.updateSerie(id, request);
+            res.json(updated);
+            return;
+        }
+
+        res.error(404, "Endpoint not found");
+    }
+
+    @Override
     public void doDelete(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // DELETE /api/series/{id}
         if (path.matches("^/api/series/[\\w\\-]+$")) {
             String role = req.authenticatedRole();
             if (!"ADMIN".equals(role)) {
@@ -84,3 +135,4 @@ public class SerieController extends SimpleServlet {
         res.error(404, "Endpoint not found");
     }
 }
+

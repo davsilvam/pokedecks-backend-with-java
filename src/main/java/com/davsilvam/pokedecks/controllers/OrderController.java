@@ -24,7 +24,6 @@ public class OrderController extends SimpleServlet {
     public void doGet(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // GET /api/orders
         if (path.equals("/api/orders")) {
             String role = req.authenticatedRole();
             if (!"ADMIN".equals(role)) {
@@ -37,7 +36,6 @@ public class OrderController extends SimpleServlet {
             return;
         }
 
-        // GET /api/orders/{id}
         if (path.matches("^/api/orders/[a-fA-F0-9\\-]+$")) {
             UUID id = UUID.fromString(path.substring(path.lastIndexOf("/") + 1));
             OrderResponseDTO order = orderService.getOrderById(id);
@@ -58,7 +56,6 @@ public class OrderController extends SimpleServlet {
     public void doPost(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // POST /api/orders
         if (path.equals("/api/orders")) {
             String email = req.authenticatedEmail();
             if (email == null) {
@@ -79,7 +76,6 @@ public class OrderController extends SimpleServlet {
     public void doDelete(Request req, Response res) throws IOException {
         String path = req.path();
 
-        // DELETE /api/orders/{id}
         if (path.matches("^/api/orders/[a-fA-F0-9\\-]+$")) {
             String role = req.authenticatedRole();
             if (!"ADMIN".equals(role)) {

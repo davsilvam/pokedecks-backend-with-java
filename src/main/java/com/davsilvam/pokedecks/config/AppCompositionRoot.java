@@ -1,6 +1,7 @@
 package com.davsilvam.pokedecks.config;
 
 import com.davsilvam.pokedecks.config.database.DatabaseConnection;
+import com.davsilvam.pokedecks.config.database.DatabaseMigrations;
 import com.davsilvam.pokedecks.controllers.*;
 import com.davsilvam.pokedecks.models.daos.*;
 import com.davsilvam.pokedecks.services.*;
@@ -39,9 +40,11 @@ public final class AppCompositionRoot {
         Logger.info("Inicializando Composition Root...");
 
         DatabaseConnection db = new DatabaseConnection();
+        DatabaseMigrations.run(db);
 
         Logger.debug("Instanciando DAOs...");
         this.userDAO = new UserDAO(db);
+
         this.cardDAO = new CardDAO(db);
         this.setDAO = new SetDAO(db);
         this.serieDAO = new SerieDAO(db);

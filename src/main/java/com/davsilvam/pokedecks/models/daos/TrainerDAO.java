@@ -130,6 +130,27 @@ public class TrainerDAO implements DAO<Trainer, String> {
         }
     }
 
+    public Trainer update(Trainer trainer) throws SQLException {
+        String query = "UPDATE trainers SET effect = ?, type = ? WHERE card_id = ?";
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(query)
+        ) {
+            pstmt.setString(1, trainer.getEffect());
+            pstmt.setString(2, trainer.getType());
+            pstmt.setString(3, trainer.getId());
+
+            int affected = pstmt.executeUpdate();
+
+            if (affected == 0) {
+                throw new SQLException("Failed to update trainer, no rows affected.");
+            }
+
+            return trainer;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String query = "DELETE FROM trainers WHERE card_id = ?";

@@ -189,6 +189,40 @@ public class CardDAO implements DAO<Card, String> {
         }
     }
 
+    public Card update(Card card) throws SQLException {
+        String queryStr = "UPDATE cards SET local_id = ?, name = ?, image_url = ?, illustrator = ?, rarity = ?, price = ?, category = ?, set_id = ? WHERE id = ?";
+        Logger.sql(queryStr, card.getLocalId(), card.getName(), card.getImageUrl(), card.getIllustrator(), card.getRarity(), card.getPrice(), card.getCategory(), card.getSetId(), card.getId());
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(queryStr)
+        ) {
+            if (card.getLocalId() != null) {
+                pstmt.setInt(1, card.getLocalId());
+            } else {
+                pstmt.setNull(1, Types.INTEGER);
+            }
+
+            pstmt.setString(2, card.getName());
+            pstmt.setString(3, card.getImageUrl());
+            pstmt.setString(4, card.getIllustrator());
+            pstmt.setString(5, card.getRarity());
+            pstmt.setDouble(6, card.getPrice());
+            pstmt.setString(7, card.getCategory() != null ? card.getCategory().name() : null);
+            pstmt.setString(8, card.getSetId());
+            pstmt.setString(9, card.getId());
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Failed to update card, no rows affected.");
+            }
+
+            Logger.debug("Carta atualizada: %s", card.getId());
+            return card;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String queryStr = "DELETE FROM cards WHERE id = ?";

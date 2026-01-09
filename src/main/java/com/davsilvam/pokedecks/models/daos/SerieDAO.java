@@ -149,6 +149,29 @@ public class SerieDAO implements DAO<Serie, String> {
         }
     }
 
+    public Serie update(Serie serie) throws SQLException {
+        String query = "UPDATE series SET name = ?, logo_url = ? WHERE id = ?";
+        Logger.sql(query, serie.getName(), serie.getLogoUrl(), serie.getId());
+
+        try (
+                Connection conn = db.getConn();
+                PreparedStatement pstmt = conn.prepareStatement(query)
+        ) {
+            pstmt.setString(1, serie.getName());
+            pstmt.setString(2, serie.getLogoUrl());
+            pstmt.setString(3, serie.getId());
+
+            int affected = pstmt.executeUpdate();
+
+            if (affected == 0) {
+                throw new SQLException("Failed to update serie, no rows affected.");
+            }
+
+            Logger.debug("Série atualizada: %s", serie.getId());
+            return serie;
+        }
+    }
+
     @Override
     public void deleteById(String id) throws SQLException {
         String query = "DELETE FROM series WHERE id = ?";

@@ -47,37 +47,33 @@ public class AuthController extends SimpleServlet {
             return;
         }
 
-        if (path.equals("/api/auth/authenticate") || path.equals("/api/auth/login")) {
-            // Extrair credenciais do header Authorization: Basic
+        if (path.equals("/api/auth/authenticate")) {
             String authHeader = req.header("Authorization");
-            
+
             if (authHeader == null || !authHeader.startsWith("Basic ")) {
                 res.error(401, "Authorization header com Basic Auth é obrigatório");
                 return;
             }
-            
+
             try {
-                // Decodificar Base64: "Basic base64(email:password)"
                 String base64Credentials = authHeader.substring(6);
                 byte[] decodedBytes = Base64.getDecoder().decode(base64Credentials);
                 String credentials = new String(decodedBytes);
-                
-                // Separar email:password
+
                 String[] parts = credentials.split(":", 2);
                 if (parts.length != 2) {
                     res.error(400, "Formato de credenciais inválido");
                     return;
                 }
-                
+
                 String email = parts[0];
                 String password = parts[1];
-                
-                // Criar DTO e autenticar
+
                 LoginUserRequestDTO dto = new LoginUserRequestDTO(email, password);
                 AuthenticateResponseDTO authResponse = authenticationService.authenticate(dto);
                 res.json(authResponse);
                 return;
-                
+
             } catch (IllegalArgumentException e) {
                 res.error(400, "Credenciais em formato inválido");
                 return;
