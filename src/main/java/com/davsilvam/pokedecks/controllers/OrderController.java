@@ -65,7 +65,7 @@ public class OrderController extends SimpleServlet {
 
             CreateOrderRequestDTO dto = JsonUtil.fromJson(req.body(), CreateOrderRequestDTO.class);
             OrderResponseDTO order = orderService.createOrder(dto);
-            res.json(201, Map.of("message", "Order created successfully", "order", order));
+            res.json(201, order);
             return;
         }
 
