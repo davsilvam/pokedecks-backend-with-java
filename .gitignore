@@ -40,3 +40,7 @@ build/
 # Environment variables
 .env
 *.env
+
+### Firebase ###
+firebase-debug.log
+firebase-debug.*.log
