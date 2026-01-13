@@ -12,6 +12,7 @@ public record CardResponseDTO(
         String illustrator,
         String rarity,
         Double price,
+        Integer stockQuantity,
         CardCategory category,
         Object metadata
 ) {

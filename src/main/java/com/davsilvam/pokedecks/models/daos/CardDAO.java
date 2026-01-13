@@ -4,6 +4,7 @@ import com.davsilvam.pokedecks.config.database.DatabaseConnection;
 import com.davsilvam.pokedecks.core.DAO;
 import com.davsilvam.pokedecks.models.*;
 import com.davsilvam.pokedecks.models.enums.CardCategory;
+import com.davsilvam.pokedecks.services.dtos.OutOfStockProductDTO;
 import com.davsilvam.pokedecks.util.Logger;
 
 import java.sql.*;
@@ -25,37 +26,43 @@ public class CardDAO implements DAO<Card, String> {
 
     @Override
     public Card save(Card card) throws SQLException {
-        String queryStr = "INSERT INTO cards (id, local_id, name, image_url, illustrator, rarity, price, category, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        Logger.sql(queryStr, card.getId(), card.getLocalId(), card.getName(), card.getImageUrl(), card.getIllustrator(), card.getRarity(), card.getPrice(), card.getCategory(), card.getSetId());
+        String queryStr = "INSERT INTO cards (id, local_id, name, image_url, illustrator, rarity, price, stock_quantity, category, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        Logger.sql(queryStr, card.getId(), card.getLocalId(), card.getName(), card.getImageUrl(), card.getIllustrator(), card.getRarity(), card.getPrice(), card.getStockQuantity(), card.getCategory(), card.getSetId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, card.getId());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, card.getId());
 
-            if (card.getLocalId() != null) {
-                pstmt.setInt(2, card.getLocalId());
-            } else {
-                pstmt.setNull(2, Types.INTEGER);
+                if (card.getLocalId() != null) {
+                    pstmt.setInt(2, card.getLocalId());
+                } else {
+                    pstmt.setNull(2, Types.INTEGER);
+                }
+
+                pstmt.setString(3, card.getName());
+                pstmt.setString(4, card.getImageUrl());
+                pstmt.setString(5, card.getIllustrator());
+                pstmt.setString(6, card.getRarity());
+                pstmt.setDouble(7, card.getPrice());
+                pstmt.setInt(8, card.getStockQuantity());
+                pstmt.setString(9, card.getCategory() != null ? card.getCategory().name() : null);
+                pstmt.setString(10, card.getSetId());
+
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows > 0) {
+                    Logger.debug("Carta salva: %s", card.getId());
+                    return card;
+                }
+
+                throw new SQLException("Failed to save the card.");
             }
-
-            pstmt.setString(3, card.getName());
-            pstmt.setString(4, card.getImageUrl());
-            pstmt.setString(5, card.getIllustrator());
-            pstmt.setString(6, card.getRarity());
-            pstmt.setDouble(7, card.getPrice());
-            pstmt.setString(8, card.getCategory() != null ? card.getCategory().name() : null);
-            pstmt.setString(9, card.getSetId());
-
-            int affectedRows = pstmt.executeUpdate();
-
-            if (affectedRows > 0) {
-                Logger.debug("Carta salva: %s", card.getId());
-                return card;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
-
-            throw new SQLException("Failed to save the card.");
         }
     }
 
@@ -64,16 +71,21 @@ public class CardDAO implements DAO<Card, String> {
         String queryStr = "SELECT * FROM cards WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                if (result.next()) {
-                    return buildCardFromResultSet(result);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    if (result.next()) {
+                        return buildCardFromResultSet(result);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -92,17 +104,22 @@ public class CardDAO implements DAO<Card, String> {
         Logger.sql(queryStr, setId);
         List<Card> cards = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, setId);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, setId);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                while (result.next()) {
-                    Card card = buildCardFromResultSet(result);
-                    cards.add(card);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    while (result.next()) {
+                        Card card = buildCardFromResultSet(result);
+                        cards.add(card);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -115,17 +132,22 @@ public class CardDAO implements DAO<Card, String> {
         Logger.sql(queryStr, "%" + name + "%");
         List<Card> cards = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, "%" + name + "%");
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, "%" + name + "%");
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                while (result.next()) {
-                    Card card = buildCardFromResultSet(result);
-                    cards.add(card);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    while (result.next()) {
+                        Card card = buildCardFromResultSet(result);
+                        cards.add(card);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -139,14 +161,19 @@ public class CardDAO implements DAO<Card, String> {
         Logger.sql(queryStr);
         List<Card> cards = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            while (result.next()) {
-                Card card = buildCardFromResultSet(result);
-                cards.add(card);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                while (result.next()) {
+                    Card card = buildCardFromResultSet(result);
+                    cards.add(card);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -159,14 +186,19 @@ public class CardDAO implements DAO<Card, String> {
         String queryStr = "SELECT 1 FROM cards WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                return result.next();
+                try (ResultSet result = pstmt.executeQuery()) {
+                    return result.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -176,50 +208,61 @@ public class CardDAO implements DAO<Card, String> {
         String queryStr = "SELECT COUNT(*) FROM cards";
         Logger.sql(queryStr);
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            if (result.next()) {
-                return result.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                if (result.next()) {
+                    return result.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
     public Card update(Card card) throws SQLException {
-        String queryStr = "UPDATE cards SET local_id = ?, name = ?, image_url = ?, illustrator = ?, rarity = ?, price = ?, category = ?, set_id = ? WHERE id = ?";
-        Logger.sql(queryStr, card.getLocalId(), card.getName(), card.getImageUrl(), card.getIllustrator(), card.getRarity(), card.getPrice(), card.getCategory(), card.getSetId(), card.getId());
+        String queryStr = "UPDATE cards SET local_id = ?, name = ?, image_url = ?, illustrator = ?, rarity = ?, price = ?, stock_quantity = ?, category = ?, set_id = ? WHERE id = ?";
+        Logger.sql(queryStr, card.getLocalId(), card.getName(), card.getImageUrl(), card.getIllustrator(), card.getRarity(), card.getPrice(), card.getStockQuantity(), card.getCategory(), card.getSetId(), card.getId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            if (card.getLocalId() != null) {
-                pstmt.setInt(1, card.getLocalId());
-            } else {
-                pstmt.setNull(1, Types.INTEGER);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                if (card.getLocalId() != null) {
+                    pstmt.setInt(1, card.getLocalId());
+                } else {
+                    pstmt.setNull(1, Types.INTEGER);
+                }
+
+                pstmt.setString(2, card.getName());
+                pstmt.setString(3, card.getImageUrl());
+                pstmt.setString(4, card.getIllustrator());
+                pstmt.setString(5, card.getRarity());
+                pstmt.setDouble(6, card.getPrice());
+                pstmt.setInt(7, card.getStockQuantity());
+                pstmt.setString(8, card.getCategory() != null ? card.getCategory().name() : null);
+                pstmt.setString(9, card.getSetId());
+                pstmt.setString(10, card.getId());
+
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows == 0) {
+                    throw new SQLException("Failed to update card, no rows affected.");
+                }
+
+                Logger.debug("Carta atualizada: %s", card.getId());
+                return card;
             }
-
-            pstmt.setString(2, card.getName());
-            pstmt.setString(3, card.getImageUrl());
-            pstmt.setString(4, card.getIllustrator());
-            pstmt.setString(5, card.getRarity());
-            pstmt.setDouble(6, card.getPrice());
-            pstmt.setString(7, card.getCategory() != null ? card.getCategory().name() : null);
-            pstmt.setString(8, card.getSetId());
-            pstmt.setString(9, card.getId());
-
-            int affectedRows = pstmt.executeUpdate();
-
-            if (affectedRows == 0) {
-                throw new SQLException("Failed to update card, no rows affected.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
-
-            Logger.debug("Carta atualizada: %s", card.getId());
-            return card;
         }
     }
 
@@ -228,19 +271,24 @@ public class CardDAO implements DAO<Card, String> {
         String queryStr = "DELETE FROM cards WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setString(1, id);
 
-            int affectedRows = pstmt.executeUpdate();
+                int affectedRows = pstmt.executeUpdate();
 
-            if (affectedRows == 0) {
-                throw new SQLException("Failed to delete card, no rows affected.");
+                if (affectedRows == 0) {
+                    throw new SQLException("Failed to delete card, no rows affected.");
+                }
+
+                Logger.debug("Carta deletada: %s", id);
             }
-
-            Logger.debug("Carta deletada: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -264,11 +312,40 @@ public class CardDAO implements DAO<Card, String> {
         String illustrator = result.getString("illustrator");
         String rarity = result.getString("rarity");
         Double price = result.getDouble("price");
+        int stockQuantity = result.getInt("stock_quantity");
+        if (result.wasNull()) {
+            stockQuantity = 0;
+        }
         String categoryStr = result.getString("category");
         CardCategory category = categoryStr != null ? CardCategory.valueOf(categoryStr) : null;
         String setId = result.getString("set_id");
 
-        return new Card(cardId, localId, name, imageUrl, illustrator, rarity, price, category, setId);
+        return new Card(cardId, localId, name, imageUrl, illustrator, rarity, price, stockQuantity, category, setId);
+    }
+
+    public List<OutOfStockProductDTO> getOutOfStockProducts() throws SQLException {
+        String queryStr = "SELECT id, name, price FROM cards WHERE stock_quantity = 0";
+        List<OutOfStockProductDTO> results = new ArrayList<>();
+        
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(queryStr)) {
+                while (rs.next()) {
+                    String id = rs.getString("id");
+                    String name = rs.getString("name");
+                    Double price = rs.getDouble("price");
+                    results.add(new OutOfStockProductDTO(id, name, price));
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
+        }
+        
+        return results;
     }
 
     public static class CardWithDetails {

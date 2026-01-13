@@ -1,6 +1,7 @@
 package com.davsilvam.pokedecks.services;
 
 import com.davsilvam.pokedecks.config.errors.exceptions.DatabaseException;
+import com.davsilvam.pokedecks.config.errors.exceptions.InsufficientStockException;
 import com.davsilvam.pokedecks.config.errors.exceptions.ResourceNotFoundException;
 import com.davsilvam.pokedecks.models.Card;
 import com.davsilvam.pokedecks.models.Order;
@@ -50,6 +51,19 @@ public class OrderService {
                 if (card == null) {
                     throw new ResourceNotFoundException("Carta com ID " + itemDTO.cardId());
                 }
+
+                // Validar estoque
+                if (card.getStockQuantity() < itemDTO.quantity()) {
+                    throw new InsufficientStockException(
+                            "Estoque insuficiente para a carta '" + card.getName() +
+                                    "'. Disponível: " + card.getStockQuantity() +
+                                    ", Solicitado: " + itemDTO.quantity()
+                    );
+                }
+
+                // Decrementar estoque
+                card.setStockQuantity(card.getStockQuantity() - itemDTO.quantity());
+                cardDAO.update(card);
 
                 OrderItem orderItem = new OrderItem(
                         UUID.randomUUID(),

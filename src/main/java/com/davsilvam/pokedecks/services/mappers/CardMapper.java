@@ -23,6 +23,7 @@ public class CardMapper {
                 card.getIllustrator(),
                 card.getRarity(),
                 card.getPrice(),
+                card.getStockQuantity(),
                 card.getCategory(),
                 new CardResponseDTO.PokemonMetadata(
                         pokemon.getDexId(),
@@ -48,6 +49,7 @@ public class CardMapper {
                 card.getIllustrator(),
                 card.getRarity(),
                 card.getPrice(),
+                card.getStockQuantity(),
                 card.getCategory(),
                 new CardResponseDTO.EnergyMetadata(
                         energy.getEffect(),
@@ -69,6 +71,7 @@ public class CardMapper {
                 card.getIllustrator(),
                 card.getRarity(),
                 card.getPrice(),
+                card.getStockQuantity(),
                 card.getCategory(),
                 new CardResponseDTO.TrainerMetadata(
                         trainer.getEffect(),
@@ -86,7 +89,8 @@ public class CardMapper {
                 card.getId(),
                 card.getName(),
                 card.getImageUrl(),
-                card.getLocalId()
+                card.getLocalId(),
+                card.getStockQuantity()
         );
     }
 }

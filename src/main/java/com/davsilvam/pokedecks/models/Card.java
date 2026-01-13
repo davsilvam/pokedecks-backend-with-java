@@ -10,6 +10,7 @@ public class Card {
     private String illustrator;
     private String rarity;
     private Double price;
+    private Integer stockQuantity;
     private CardCategory category;
 
     // --- N:1 Relationships ---
@@ -23,6 +24,7 @@ public class Card {
             String illustrator,
             String rarity,
             Double price,
+            Integer stockQuantity,
             CardCategory category,
             String setId) {
         this.id = id;
@@ -32,6 +34,7 @@ public class Card {
         this.illustrator = illustrator;
         this.rarity = rarity;
         this.price = price;
+        this.stockQuantity = stockQuantity != null ? stockQuantity : 0;
         this.category = category;
         this.setId = setId;
     }
@@ -90,6 +93,14 @@ public class Card {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Integer getStockQuantity() {
+        return stockQuantity;
+    }
+
+    public void setStockQuantity(Integer stockQuantity) {
+        this.stockQuantity = stockQuantity;
     }
 
     public CardCategory getCategory() {
