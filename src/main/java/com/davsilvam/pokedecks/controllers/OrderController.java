@@ -4,8 +4,10 @@ import com.davsilvam.pokedecks.server.Request;
 import com.davsilvam.pokedecks.server.Response;
 import com.davsilvam.pokedecks.server.SimpleServlet;
 import com.davsilvam.pokedecks.services.OrderService;
+import com.davsilvam.pokedecks.services.UserService;
 import com.davsilvam.pokedecks.services.dtos.CreateOrderRequestDTO;
 import com.davsilvam.pokedecks.services.dtos.OrderResponseDTO;
+import com.davsilvam.pokedecks.services.dtos.UserResponseDTO;
 import com.davsilvam.pokedecks.util.JsonUtil;
 
 import java.io.IOException;
@@ -15,15 +17,32 @@ import java.util.UUID;
 
 public class OrderController extends SimpleServlet {
     private final OrderService orderService;
+    private final UserService userService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, UserService userService) {
         this.orderService = orderService;
+        this.userService = userService;
     }
 
     @Override
     public void doGet(Request req, Response res) throws IOException {
         String path = req.path();
 
+        // GET /api/orders/my-orders - obter pedidos do usuário autenticado
+        if (path.equals("/api/orders/my-orders")) {
+            String email = req.authenticatedEmail();
+            if (email == null) {
+                res.error(401, "Unauthorized");
+                return;
+            }
+
+            UserResponseDTO currentUser = userService.findByEmail(email);
+            List<OrderResponseDTO> orders = orderService.getOrdersByUserId(currentUser.id());
+            res.json(orders);
+            return;
+        }
+
+        // GET /api/orders - obter todos os pedidos (admin only)
         if (path.equals("/api/orders")) {
             String role = req.authenticatedRole();
             if (!"ADMIN".equals(role)) {
@@ -36,6 +55,7 @@ public class OrderController extends SimpleServlet {
             return;
         }
 
+        // GET /api/orders/{id} - obter pedido por ID
         if (path.matches("^/api/orders/[a-fA-F0-9\\-]+$")) {
             UUID id = UUID.fromString(path.substring(path.lastIndexOf("/") + 1));
             OrderResponseDTO order = orderService.getOrderById(id);

@@ -25,6 +25,7 @@ public final class AppCompositionRoot {
     public final SetService setService;
     public final SerieService serieService;
     public final OrderService orderService;
+    public final ReportService reportService;
 
     // Controllers
     public final AuthController authController;
@@ -33,6 +34,7 @@ public final class AppCompositionRoot {
     public final SetController setController;
     public final SerieController serieController;
     public final OrderController orderController;
+    public final ReportController reportController;
     public final HealthController healthController;
 
 
@@ -40,7 +42,9 @@ public final class AppCompositionRoot {
         Logger.info("Inicializando Composition Root...");
 
         DatabaseConnection db = new DatabaseConnection();
-        DatabaseMigrations.run(db);
+        
+        // Migrations desabilitadas - banco já foi criado pelo Spring Boot
+        // DatabaseMigrations.run(db);
 
         Logger.debug("Instanciando DAOs...");
         this.userDAO = new UserDAO(db);
@@ -59,6 +63,7 @@ public final class AppCompositionRoot {
         this.setService = new SetService(serieDAO, setDAO);
         this.serieService = new SerieService(serieDAO);
         this.orderService = new OrderService(orderDAO, userDAO, cardDAO);
+        this.reportService = new ReportService(orderDAO, cardDAO);
         this.authenticationService = new AuthenticationService(userDAO);
 
         Logger.debug("Instanciando Controllers...");
@@ -67,7 +72,8 @@ public final class AppCompositionRoot {
         this.cardController = new CardController(cardService);
         this.setController = new SetController(setService, cardService);
         this.serieController = new SerieController(serieService, setService);
-        this.orderController = new OrderController(orderService);
+        this.orderController = new OrderController(orderService, userService);
+        this.reportController = new ReportController(reportService);
         this.healthController = new HealthController();
 
         Logger.info("Composition Root inicializado com sucesso");
