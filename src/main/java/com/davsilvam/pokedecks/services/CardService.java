@@ -72,6 +72,7 @@ public class CardService {
                     request.illustrator(),
                     request.rarity(),
                     request.price(),
+                    0,
                     request.category(),
                     request.setId()
             );

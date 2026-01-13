@@ -31,8 +31,8 @@ public class ReportController extends SimpleServlet {
                 return;
             }
 
-            String startDateStr = req.queryParam("startDate");
-            String endDateStr = req.queryParam("endDate");
+            String startDateStr = req.query("startDate");
+            String endDateStr = req.query("endDate");
 
             if (startDateStr == null || endDateStr == null) {
                 res.error(400, "Missing required parameters: startDate and endDate");
@@ -68,8 +68,8 @@ public class ReportController extends SimpleServlet {
                 return;
             }
 
-            String startDateStr = req.queryParam("startDate");
-            String endDateStr = req.queryParam("endDate");
+            String startDateStr = req.query("startDate");
+            String endDateStr = req.query("endDate");
 
             if (startDateStr == null || endDateStr == null) {
                 res.error(400, "Missing required parameters: startDate and endDate");
