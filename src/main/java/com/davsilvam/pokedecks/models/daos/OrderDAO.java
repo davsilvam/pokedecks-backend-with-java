@@ -5,9 +5,12 @@ import com.davsilvam.pokedecks.core.DAO;
 import com.davsilvam.pokedecks.models.Order;
 import com.davsilvam.pokedecks.models.OrderItem;
 import com.davsilvam.pokedecks.models.User;
+import com.davsilvam.pokedecks.services.dtos.CustomerPurchaseReportDTO;
+import com.davsilvam.pokedecks.services.dtos.DailyRevenueReportDTO;
 import com.davsilvam.pokedecks.util.Logger;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,20 +32,25 @@ public class OrderDAO implements DAO<Order, UUID> {
         String queryStr = "INSERT INTO orders (id, order_time, user_id) VALUES (?, ?, ?)";
         Logger.sql(queryStr, order.getId(), order.getOrderTime(), order.getUserId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, order.getId());
-            pstmt.setTimestamp(2, Timestamp.valueOf(order.getOrderTime()));
-            pstmt.setObject(3, order.getUserId());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, order.getId());
+                pstmt.setTimestamp(2, Timestamp.valueOf(order.getOrderTime()));
+                pstmt.setObject(3, order.getUserId());
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                Logger.debug("Pedido salvo: %s", order.getId());
-                return order;
+                int affectedRows = pstmt.executeUpdate();
+                if (affectedRows > 0) {
+                    Logger.debug("Pedido salvo: %s", order.getId());
+                    return order;
+                }
+                throw new SQLException("Failed to save the order.");
             }
-            throw new SQLException("Failed to save the order.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -51,16 +59,21 @@ public class OrderDAO implements DAO<Order, UUID> {
         String queryStr = "SELECT * FROM orders WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                if (result.next()) {
-                    return buildOrderFromResultSet(result);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    if (result.next()) {
+                        return buildOrderFromResultSet(result);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -82,17 +95,22 @@ public class OrderDAO implements DAO<Order, UUID> {
         Logger.sql(queryStr, userId);
         List<Order> orders = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, userId);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, userId);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                while (result.next()) {
-                    Order order = buildOrderFromResultSet(result);
-                    orders.add(order);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    while (result.next()) {
+                        Order order = buildOrderFromResultSet(result);
+                        orders.add(order);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -116,14 +134,19 @@ public class OrderDAO implements DAO<Order, UUID> {
         Logger.sql(queryStr);
         List<Order> orders = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            while (result.next()) {
-                Order order = buildOrderFromResultSet(result);
-                orders.add(order);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                while (result.next()) {
+                    Order order = buildOrderFromResultSet(result);
+                    orders.add(order);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -146,14 +169,19 @@ public class OrderDAO implements DAO<Order, UUID> {
         String queryStr = "SELECT 1 FROM orders WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                return result.next();
+                try (ResultSet result = pstmt.executeQuery()) {
+                    return result.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -163,16 +191,21 @@ public class OrderDAO implements DAO<Order, UUID> {
         String queryStr = "SELECT COUNT(*) FROM orders";
         Logger.sql(queryStr);
         
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            if (result.next()) {
-                return result.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                if (result.next()) {
+                    return result.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -181,19 +214,24 @@ public class OrderDAO implements DAO<Order, UUID> {
         String queryStr = "DELETE FROM orders WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            int affectedRows = pstmt.executeUpdate();
+                int affectedRows = pstmt.executeUpdate();
 
-            if (affectedRows == 0) {
-                throw new SQLException("Failed to delete order, no rows affected.");
+                if (affectedRows == 0) {
+                    throw new SQLException("Failed to delete order, no rows affected.");
+                }
+                
+                Logger.debug("Pedido deletado: %s", id);
             }
-            
-            Logger.debug("Pedido deletado: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -214,5 +252,79 @@ public class OrderDAO implements DAO<Order, UUID> {
         UUID userId = result.getObject("user_id", UUID.class);
 
         return new Order(id, orderTime, userId);
+    }
+
+    public List<DailyRevenueReportDTO> getDailyRevenue(LocalDate startDate, LocalDate endDate) throws SQLException {
+        String queryStr = """
+            SELECT DATE(o.order_time) as date, SUM(oi.quantity * c.price) as total_revenue
+            FROM orders o
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN cards c ON c.id = oi.card_id
+            WHERE o.order_time >= ? AND o.order_time <= ?
+            GROUP BY DATE(o.order_time)
+            ORDER BY DATE(o.order_time)
+        """;
+        
+        List<DailyRevenueReportDTO> results = new ArrayList<>();
+        Connection conn = null;
+        
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setTimestamp(1, Timestamp.valueOf(startDate.atStartOfDay()));
+                pstmt.setTimestamp(2, Timestamp.valueOf(endDate.atTime(23, 59, 59)));
+                
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        LocalDate date = rs.getDate("date").toLocalDate();
+                        Double totalRevenue = rs.getDouble("total_revenue");
+                        results.add(new DailyRevenueReportDTO(date, totalRevenue));
+                    }
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
+        }
+        
+        return results;
+    }
+
+    public List<CustomerPurchaseReportDTO> getCustomerPurchases(LocalDate startDate, LocalDate endDate) throws SQLException {
+        String queryStr = """
+            SELECT u.id, u.name, COUNT(o.id) as total_purchases
+            FROM orders o
+            JOIN users u ON u.id = o.user_id
+            WHERE o.order_time >= ? AND o.order_time <= ?
+            GROUP BY u.id, u.name
+            ORDER BY total_purchases DESC
+        """;
+        
+        List<CustomerPurchaseReportDTO> results = new ArrayList<>();
+        Connection conn = null;
+        
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setTimestamp(1, Timestamp.valueOf(startDate.atStartOfDay()));
+                pstmt.setTimestamp(2, Timestamp.valueOf(endDate.atTime(23, 59, 59)));
+                
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        UUID customerId = (UUID) rs.getObject("id");
+                        String customerName = rs.getString("name");
+                        Long totalPurchases = rs.getLong("total_purchases");
+                        results.add(new CustomerPurchaseReportDTO(customerId, customerName, totalPurchases));
+                    }
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
+        }
+        
+        return results;
     }
 }
