@@ -41,7 +41,7 @@ public class Response {
         status(200, json);
     }
 
-    public void json(int code, Map<String, Object> data) throws IOException {
+    public void json(int code, Object data) throws IOException {
         String json = JsonUtil.toJson(data);
         status(code, json);
     }

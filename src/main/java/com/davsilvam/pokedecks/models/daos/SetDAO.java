@@ -25,30 +25,35 @@ public class SetDAO implements DAO<Set, String> {
         String query = "INSERT INTO sets (id, name, logo_url, release_date, serie_id) VALUES (?, ?, ?, ?, ?)";
         Logger.sql(query, set.getId(), set.getName(), set.getLogoUrl(), set.getReleaseDate(), set.getSerieId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, set.getId());
-            pstmt.setString(2, set.getName());
-            pstmt.setString(3, set.getLogoUrl());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, set.getId());
+                pstmt.setString(2, set.getName());
+                pstmt.setString(3, set.getLogoUrl());
 
-            if (set.getReleaseDate() != null) {
-                pstmt.setTimestamp(4, Timestamp.valueOf(set.getReleaseDate()));
-            } else {
-                pstmt.setNull(4, Types.TIMESTAMP);
+                if (set.getReleaseDate() != null) {
+                    pstmt.setTimestamp(4, Timestamp.valueOf(set.getReleaseDate()));
+                } else {
+                    pstmt.setNull(4, Types.TIMESTAMP);
+                }
+
+                pstmt.setString(5, set.getSerieId());
+
+                int affected = pstmt.executeUpdate();
+
+                if (affected > 0) {
+                    Logger.debug("Set salvo: %s", set.getId());
+                    return set;
+                }
+
+                throw new SQLException("Failed to save set.");
             }
-
-            pstmt.setString(5, set.getSerieId());
-
-            int affected = pstmt.executeUpdate();
-
-            if (affected > 0) {
-                Logger.debug("Set salvo: %s", set.getId());
-                return set;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
-
-            throw new SQLException("Failed to save set.");
         }
     }
 
@@ -61,19 +66,24 @@ public class SetDAO implements DAO<Set, String> {
                       "GROUP BY s.id, s.name, s.logo_url, s.release_date, s.serie_id";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    Set set = buildSetFromResultSet(rs);
-                    int count = rs.getInt("cards_count");
-                    set.setCardCount(count);
-                    return set;
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        Set set = buildSetFromResultSet(rs);
+                        int count = rs.getInt("cards_count");
+                        set.setCardCount(count);
+                        return set;
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -96,19 +106,24 @@ public class SetDAO implements DAO<Set, String> {
         Logger.sql(query, serieId);
         List<Set> list = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, serieId);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, serieId);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Set set = buildSetFromResultSet(rs);
-                    int count = rs.getInt("cards_count");
-                    set.setCardCount(count);
-                    list.add(set);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        Set set = buildSetFromResultSet(rs);
+                        int count = rs.getInt("cards_count");
+                        set.setCardCount(count);
+                        list.add(set);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -135,16 +150,21 @@ public class SetDAO implements DAO<Set, String> {
         Logger.sql(query);
         List<Set> list = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            while (rs.next()) {
-                Set set = buildSetFromResultSet(rs);
-                int count = rs.getInt("cards_count");
-                set.setCardCount(count);
-                list.add(set);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                while (rs.next()) {
+                    Set set = buildSetFromResultSet(rs);
+                    int count = rs.getInt("cards_count");
+                    set.setCardCount(count);
+                    list.add(set);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -167,14 +187,19 @@ public class SetDAO implements DAO<Set, String> {
         String query = "SELECT 1 FROM sets WHERE id = ?";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -184,16 +209,21 @@ public class SetDAO implements DAO<Set, String> {
         String query = "SELECT COUNT(*) FROM sets";
         Logger.sql(query);
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -201,30 +231,35 @@ public class SetDAO implements DAO<Set, String> {
         String query = "UPDATE sets SET name = ?, logo_url = ?, release_date = ?, serie_id = ? WHERE id = ?";
         Logger.sql(query, set.getName(), set.getLogoUrl(), set.getReleaseDate(), set.getSerieId(), set.getId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, set.getName());
-            pstmt.setString(2, set.getLogoUrl());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, set.getName());
+                pstmt.setString(2, set.getLogoUrl());
 
-            if (set.getReleaseDate() != null) {
-                pstmt.setTimestamp(3, Timestamp.valueOf(set.getReleaseDate()));
-            } else {
-                pstmt.setNull(3, Types.TIMESTAMP);
+                if (set.getReleaseDate() != null) {
+                    pstmt.setTimestamp(3, Timestamp.valueOf(set.getReleaseDate()));
+                } else {
+                    pstmt.setNull(3, Types.TIMESTAMP);
+                }
+
+                pstmt.setString(4, set.getSerieId());
+                pstmt.setString(5, set.getId());
+
+                int affected = pstmt.executeUpdate();
+
+                if (affected == 0) {
+                    throw new SQLException("Failed to update set, no rows affected.");
+                }
+
+                Logger.debug("Set atualizado: %s", set.getId());
+                return set;
             }
-
-            pstmt.setString(4, set.getSerieId());
-            pstmt.setString(5, set.getId());
-
-            int affected = pstmt.executeUpdate();
-
-            if (affected == 0) {
-                throw new SQLException("Failed to update set, no rows affected.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
-
-            Logger.debug("Set atualizado: %s", set.getId());
-            return set;
         }
     }
 
@@ -233,20 +268,25 @@ public class SetDAO implements DAO<Set, String> {
         String query = "DELETE FROM sets WHERE id = ?";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-            pstmt.setString(1, id);
+                pstmt.setString(1, id);
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to delete set, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to delete set, no rows affected.");
+                }
+
+                Logger.debug("Set deletado: %s", id);
             }
-
-            Logger.debug("Set deletado: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 

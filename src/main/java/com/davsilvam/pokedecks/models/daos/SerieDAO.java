@@ -24,22 +24,27 @@ public class SerieDAO implements DAO<Serie, String> {
         String query = "INSERT INTO series (id, name, logo_url) VALUES (?, ?, ?)";
         Logger.sql(query, serie.getId(), serie.getName(), serie.getLogoUrl());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, serie.getId());
-            pstmt.setString(2, serie.getName());
-            pstmt.setString(3, serie.getLogoUrl());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, serie.getId());
+                pstmt.setString(2, serie.getName());
+                pstmt.setString(3, serie.getLogoUrl());
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected > 0) {
-                Logger.debug("Série salva: %s", serie.getId());
-                return serie;
+                if (affected > 0) {
+                    Logger.debug("Série salva: %s", serie.getId());
+                    return serie;
+                }
+
+                throw new SQLException("Failed to save serie.");
             }
-
-            throw new SQLException("Failed to save serie.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -52,19 +57,24 @@ public class SerieDAO implements DAO<Serie, String> {
                       "GROUP BY s.id, s.name, s.logo_url";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    Serie serie = buildSerieFromResultSet(rs);
-                    int count = rs.getInt("sets_count");
-                    serie.setSetCount(count);
-                    return serie;
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        Serie serie = buildSerieFromResultSet(rs);
+                        int count = rs.getInt("sets_count");
+                        serie.setSetCount(count);
+                        return serie;
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -87,16 +97,21 @@ public class SerieDAO implements DAO<Serie, String> {
         Logger.sql(query);
         List<Serie> list = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            while (rs.next()) {
-                Serie serie = buildSerieFromResultSet(rs);
-                int count = rs.getInt("sets_count");
-                serie.setSetCount(count);
-                list.add(serie);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                while (rs.next()) {
+                    Serie serie = buildSerieFromResultSet(rs);
+                    int count = rs.getInt("sets_count");
+                    serie.setSetCount(count);
+                    list.add(serie);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -119,14 +134,19 @@ public class SerieDAO implements DAO<Serie, String> {
         String query = "SELECT 1 FROM series WHERE id = ?";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -136,16 +156,21 @@ public class SerieDAO implements DAO<Serie, String> {
         String query = "SELECT COUNT(*) FROM series";
         Logger.sql(query);
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -153,22 +178,27 @@ public class SerieDAO implements DAO<Serie, String> {
         String query = "UPDATE series SET name = ?, logo_url = ? WHERE id = ?";
         Logger.sql(query, serie.getName(), serie.getLogoUrl(), serie.getId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, serie.getName());
-            pstmt.setString(2, serie.getLogoUrl());
-            pstmt.setString(3, serie.getId());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, serie.getName());
+                pstmt.setString(2, serie.getLogoUrl());
+                pstmt.setString(3, serie.getId());
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to update serie, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to update serie, no rows affected.");
+                }
+
+                Logger.debug("Série atualizada: %s", serie.getId());
+                return serie;
             }
-
-            Logger.debug("Série atualizada: %s", serie.getId());
-            return serie;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -177,19 +207,24 @@ public class SerieDAO implements DAO<Serie, String> {
         String query = "DELETE FROM series WHERE id = ?";
         Logger.sql(query, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to delete serie, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to delete serie, no rows affected.");
+                }
+                
+                Logger.debug("Série deletada: %s", id);
             }
-            
-            Logger.debug("Série deletada: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 

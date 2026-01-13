@@ -19,21 +19,26 @@ public class TrainerDAO implements DAO<Trainer, String> {
     public Trainer save(Trainer trainer) throws SQLException {
         String query = "INSERT INTO trainers (card_id, effect, type) VALUES (?, ?, ?)";
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, trainer.getId());
-            pstmt.setString(2, trainer.getEffect());
-            pstmt.setString(3, trainer.getType());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, trainer.getId());
+                pstmt.setString(2, trainer.getEffect());
+                pstmt.setString(3, trainer.getType());
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected > 0) {
-                return trainer;
+                if (affected > 0) {
+                    return trainer;
+                }
+
+                throw new SQLException("Failed to save trainer.");
             }
-
-            throw new SQLException("Failed to save trainer.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -42,16 +47,21 @@ public class TrainerDAO implements DAO<Trainer, String> {
         String query = "SELECT * FROM trainers WHERE card_id = ?";
         Trainer trainer = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    trainer = buildTrainerFromResultSet(rs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        trainer = buildTrainerFromResultSet(rs);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -62,16 +72,21 @@ public class TrainerDAO implements DAO<Trainer, String> {
         String query = "SELECT t.* FROM trainers t JOIN cards c ON t.card_id = c.id WHERE c.id = ?";
         Trainer trainer = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, cardId);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, cardId);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    trainer = buildTrainerFromResultSet(rs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        trainer = buildTrainerFromResultSet(rs);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -83,14 +98,19 @@ public class TrainerDAO implements DAO<Trainer, String> {
         String query = "SELECT * FROM trainers";
         List<Trainer> list = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            while (rs.next()) {
-                Trainer trainer = buildTrainerFromResultSet(rs);
-                list.add(trainer);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                while (rs.next()) {
+                    Trainer trainer = buildTrainerFromResultSet(rs);
+                    list.add(trainer);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -101,14 +121,19 @@ public class TrainerDAO implements DAO<Trainer, String> {
     public boolean existsById(String id) throws SQLException {
         String query = "SELECT 1 FROM trainers WHERE card_id = ?";
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -117,37 +142,47 @@ public class TrainerDAO implements DAO<Trainer, String> {
     public int count() throws SQLException {
         String query = "SELECT COUNT(*) FROM trainers";
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
     public Trainer update(Trainer trainer) throws SQLException {
         String query = "UPDATE trainers SET effect = ?, type = ? WHERE card_id = ?";
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, trainer.getEffect());
-            pstmt.setString(2, trainer.getType());
-            pstmt.setString(3, trainer.getId());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, trainer.getEffect());
+                pstmt.setString(2, trainer.getType());
+                pstmt.setString(3, trainer.getId());
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to update trainer, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to update trainer, no rows affected.");
+                }
+
+                return trainer;
             }
-
-            return trainer;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -155,16 +190,21 @@ public class TrainerDAO implements DAO<Trainer, String> {
     public void deleteById(String id) throws SQLException {
         String query = "DELETE FROM trainers WHERE card_id = ?";
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, id);
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to delete trainer, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to delete trainer, no rows affected.");
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }

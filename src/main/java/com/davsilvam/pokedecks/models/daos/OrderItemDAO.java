@@ -25,21 +25,26 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         String queryStr = "INSERT INTO order_items (id, quantity, order_id, card_id) VALUES (?, ?, ?, ?)";
         Logger.sql(queryStr, orderItem.getId(), orderItem.getQuantity(), orderItem.getOrderId(), orderItem.getCardId());
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, orderItem.getId());
-            pstmt.setInt(2, orderItem.getQuantity());
-            pstmt.setObject(3, orderItem.getOrderId());
-            pstmt.setString(4, orderItem.getCardId());
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, orderItem.getId());
+                pstmt.setInt(2, orderItem.getQuantity());
+                pstmt.setObject(3, orderItem.getOrderId());
+                pstmt.setString(4, orderItem.getCardId());
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                Logger.debug("Item de pedido salvo: %s", orderItem.getId());
-                return orderItem;
+                int affectedRows = pstmt.executeUpdate();
+                if (affectedRows > 0) {
+                    Logger.debug("Item de pedido salvo: %s", orderItem.getId());
+                    return orderItem;
+                }
+                throw new SQLException("Failed to save the order item.");
             }
-            throw new SQLException("Failed to save the order item.");
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -48,16 +53,21 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         String queryStr = "SELECT * FROM order_items WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                if (result.next()) {
-                    return buildOrderItemFromResultSet(result);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    if (result.next()) {
+                        return buildOrderItemFromResultSet(result);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -70,14 +80,19 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         Logger.sql(queryStr);
         List<OrderItem> orderItems = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            while (result.next()) {
-                OrderItem orderItem = buildOrderItemFromResultSet(result);
-                orderItems.add(orderItem);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                while (result.next()) {
+                    OrderItem orderItem = buildOrderItemFromResultSet(result);
+                    orderItems.add(orderItem);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -89,14 +104,19 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         String queryStr = "SELECT 1 FROM order_items WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                return result.next();
+                try (ResultSet result = pstmt.executeQuery()) {
+                    return result.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -106,16 +126,21 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         String queryStr = "SELECT COUNT(*) FROM order_items";
         Logger.sql(queryStr);
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet result = stmt.executeQuery(queryStr)
-        ) {
-            if (result.next()) {
-                return result.getInt(1);
-            }
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet result = stmt.executeQuery(queryStr)) {
+                if (result.next()) {
+                    return result.getInt(1);
+                }
 
-            return 0;
+                return 0;
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -124,19 +149,24 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         String queryStr = "DELETE FROM order_items WHERE id = ?";
         Logger.sql(queryStr, id);
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, id);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, id);
 
-            int affectedRows = pstmt.executeUpdate();
+                int affectedRows = pstmt.executeUpdate();
 
-            if (affectedRows == 0) {
-                throw new SQLException("Failed to delete order item, no rows affected.");
+                if (affectedRows == 0) {
+                    throw new SQLException("Failed to delete order item, no rows affected.");
+                }
+                
+                Logger.debug("Item de pedido deletado: %s", id);
             }
-            
-            Logger.debug("Item de pedido deletado: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -145,17 +175,22 @@ public class OrderItemDAO implements DAO<OrderItem, UUID> {
         Logger.sql(queryStr, orderId);
         List<OrderItem> orderItems = new ArrayList<>();
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(queryStr)
-        ) {
-            pstmt.setObject(1, orderId);
+        Connection conn = null;
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(queryStr)) {
+                pstmt.setObject(1, orderId);
 
-            try (ResultSet result = pstmt.executeQuery()) {
-                while (result.next()) {
-                    OrderItem orderItem = buildOrderItemFromResultSet(result);
-                    orderItems.add(orderItem);
+                try (ResultSet result = pstmt.executeQuery()) {
+                    while (result.next()) {
+                        OrderItem orderItem = buildOrderItemFromResultSet(result);
+                        orderItems.add(orderItem);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 

@@ -23,34 +23,40 @@ public class UserDAO implements DAO<User, UUID> {
     public User save(User user) throws SQLException {
         String query = "INSERT INTO users (id, name, username, email, password_hash, role, phone_number, birth_date, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Logger.sql(query, user.getId(), user.getName(), user.getUsername(), user.getEmail(), "***", user.getRole(), user.getPhoneNumber(), user.getBirthDate(), user.getAddress());
+        Connection conn = null;
 
-        try (Connection conn = db.getConn();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setObject(1, user.getId());
+                pstmt.setString(2, user.getName());
+                pstmt.setString(3, user.getUsername());
+                pstmt.setString(4, user.getEmail());
+                pstmt.setString(5, user.getPasswordHash());
+                pstmt.setString(6, user.getRole() != null ? user.getRole().name() : null);
+                pstmt.setString(7, user.getPhoneNumber());
 
-            pstmt.setObject(1, user.getId());
-            pstmt.setString(2, user.getName());
-            pstmt.setString(3, user.getUsername());
-            pstmt.setString(4, user.getEmail());
-            pstmt.setString(5, user.getPasswordHash());
-            pstmt.setString(6, user.getRole() != null ? user.getRole().name() : null);
-            pstmt.setString(7, user.getPhoneNumber());
+                if (user.getBirthDate() != null) {
+                    pstmt.setDate(8, Date.valueOf(user.getBirthDate()));
+                } else {
+                    pstmt.setNull(8, Types.DATE);
+                }
 
-            if (user.getBirthDate() != null) {
-                pstmt.setDate(8, Date.valueOf(user.getBirthDate()));
-            } else {
-                pstmt.setNull(8, Types.DATE);
+                pstmt.setString(9, user.getAddress());
+
+                int affected = pstmt.executeUpdate();
+
+                if (affected > 0) {
+                    Logger.debug("Usuário salvo com sucesso: %s", user.getEmail());
+                    return user;
+                }
+
+                throw new SQLException("Failed to save user.");
             }
-
-            pstmt.setString(9, user.getAddress());
-
-            int affected = pstmt.executeUpdate();
-
-            if (affected > 0) {
-                Logger.debug("Usuário salvo com sucesso: %s", user.getEmail());
-                return user;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
-
-            throw new SQLException("Failed to save user.");
         }
     }
 
@@ -59,17 +65,22 @@ public class UserDAO implements DAO<User, UUID> {
         String query = "SELECT * FROM users WHERE id = ?";
         Logger.sql(query, id);
         User user = null;
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setObject(1, id);
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    user = buildUserFromResultSet(rs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        user = buildUserFromResultSet(rs);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -80,17 +91,22 @@ public class UserDAO implements DAO<User, UUID> {
         String query = "SELECT * FROM users WHERE username = ?";
         Logger.sql(query, username);
         User user = null;
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, username);
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, username);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    user = buildUserFromResultSet(rs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        user = buildUserFromResultSet(rs);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -101,17 +117,22 @@ public class UserDAO implements DAO<User, UUID> {
         String query = "SELECT * FROM users WHERE email = ?";
         Logger.sql(query, email);
         User user = null;
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setString(1, email);
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setString(1, email);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    user = buildUserFromResultSet(rs);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        user = buildUserFromResultSet(rs);
+                    }
                 }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -123,15 +144,20 @@ public class UserDAO implements DAO<User, UUID> {
         String query = "SELECT * FROM users";
         Logger.sql(query);
         List<User> list = new ArrayList<>();
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            while (rs.next()) {
-                User user = buildUserFromResultSet(rs);
-                list.add(user);
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                while (rs.next()) {
+                    User user = buildUserFromResultSet(rs);
+                    list.add(user);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
 
@@ -143,15 +169,20 @@ public class UserDAO implements DAO<User, UUID> {
     public boolean existsById(UUID id) throws SQLException {
         String query = "SELECT 1 FROM users WHERE id = ?";
         Logger.sql(query, id);
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setObject(1, id);
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setObject(1, id);
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
             }
         }
     }
@@ -160,17 +191,22 @@ public class UserDAO implements DAO<User, UUID> {
     public int count() throws SQLException {
         String query = "SELECT COUNT(*) FROM users";
         Logger.sql(query);
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(query)
-        ) {
-            if (rs.next()) {
-                return rs.getInt(1);
+        try {
+            conn = db.getConn();
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+
+                return 0;
             }
-
-            return 0;
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
@@ -178,20 +214,25 @@ public class UserDAO implements DAO<User, UUID> {
     public void deleteById(UUID id) throws SQLException {
         String query = "DELETE FROM users WHERE id = ?";
         Logger.sql(query, id);
+        Connection conn = null;
 
-        try (
-                Connection conn = db.getConn();
-                PreparedStatement pstmt = conn.prepareStatement(query)
-        ) {
-            pstmt.setObject(1, id);
+        try {
+            conn = db.getConn();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setObject(1, id);
 
-            int affected = pstmt.executeUpdate();
+                int affected = pstmt.executeUpdate();
 
-            if (affected == 0) {
-                throw new SQLException("Failed to delete user, no rows affected.");
+                if (affected == 0) {
+                    throw new SQLException("Failed to delete user, no rows affected.");
+                }
+
+                Logger.debug("Usuário deletado: %s", id);
             }
-
-            Logger.debug("Usuário deletado: %s", id);
+        } finally {
+            if (conn != null) {
+                db.releaseConn(conn);
+            }
         }
     }
 
